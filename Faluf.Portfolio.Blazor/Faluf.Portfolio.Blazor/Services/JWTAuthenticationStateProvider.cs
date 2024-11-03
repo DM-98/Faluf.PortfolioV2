@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components.Server;
 
 namespace Faluf.Portfolio.Blazor.Services;
 
-internal sealed class JWTAuthenticationStateProvider(IAuthService authService) : ServerAuthenticationStateProvider
+public sealed class JWTAuthenticationStateProvider(IAuthService authService) : ServerAuthenticationStateProvider
 {
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
