@@ -1,0 +1,26 @@
+﻿@inherits LayoutComponentBase
+
+@inject IStringLocalizer<MainLayout> Localizer
+
+<SerilogErrorBoundary>
+	<ChildContent>
+		<p>Rendermode: @RendererInfo.Name</p>
+		<p>Is interactive: @RendererInfo.IsInteractive</p>
+
+		@Body
+	</ChildContent>
+
+	<ErrorContent>
+		<h1>Oops!</h1>
+
+		<p>@Localizer["ErrorOccurredInApplication", context.HelpLink ?? string.Empty].</p>
+
+		<button class="btn btn-primary" @onclick="errorBoundary.Recover">
+			@Localizer["Recover"]
+		</button>
+	</ErrorContent>
+</SerilogErrorBoundary>
+
+@code {
+	private ErrorBoundary errorBoundary = null!;
+}

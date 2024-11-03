@@ -1,0 +1,35 @@
+﻿@page "/"
+
+@inject IAuthService AuthService
+@inject IStringLocalizer<Home> Localizer
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+<AuthorizeView>
+	<Authorized>
+		<div class="gap-3">
+			<p>Hello, @context.User.Identity?.Name!</p>
+			<p>IsAuthenticated: @context.User.Identity?.IsAuthenticated</p>
+			<p>AuthenticationType: @context.User.Identity?.AuthenticationType</p>
+			<p>IsInRole("Admin"): @context.User.IsInRole("Admin")</p>
+			<p>IsInRole("User"): @context.User.IsInRole("User")</p>
+		</div>
+
+		<form action="api/Auth/Logout" method="post" @formname="LogoutForm">
+			<AntiforgeryToken />
+
+			<button type="submit" class="btn btn-danger">@Localizer["Logout"]</button>
+		</form>
+	</Authorized>
+
+	<NotAuthorized>
+		<p>You are not logged in.</p>
+
+		<p><a href="/register">Register</a></p>
+		<p><a href="/login">Login</a></p>
+	</NotAuthorized>
+</AuthorizeView>
+
+Welcome to your new app.

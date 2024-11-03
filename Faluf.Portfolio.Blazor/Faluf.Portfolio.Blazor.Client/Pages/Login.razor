@@ -1,0 +1,65 @@
+﻿@page "/login"
+
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+@inject IStringLocalizer<Login> Localizer
+
+<h3>@Localizer["Login"]</h3>
+
+<EditForm Model="@loginInputModel" OnValidSubmit="LoginAsync">
+	<FluentValidationValidator />
+
+	<!-- Email Field -->
+	<div class="mb-3">
+		<label for="email" class="form-label">@Localizer["Email"]:</label>
+		<InputText id="email" @bind-Value="@loginInputModel.Email" class="form-control" />
+		<ValidationMessage For="@(() => loginInputModel.Email)" class="text-danger" />
+	</div>
+
+	<!-- Password Field -->
+	<div class="mb-3">
+		<label for="password" class="form-label">@Localizer["Password"]:</label>
+		<InputText id="password" type="password" @bind-Value="@loginInputModel.Password" class="form-control" />
+		<ValidationMessage For="@(() => loginInputModel.Password)" class="text-danger" />
+	</div>
+
+	<!-- Remember Me Checkbox -->
+	<div class="form-check mb-3">
+		<InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="@loginInputModel.RememberMe" />
+		<label class="form-check-label" for="rememberMe">@Localizer["StayLoggedIn"]</label>
+	</div>
+
+	<!-- Login Button -->
+	<div class="mb-3">
+		<button type="submit" class="btn btn-primary btn-block">@Localizer["Login"]</button>
+	</div>
+
+	@if (!string.IsNullOrWhiteSpace(errorMessage))
+	{
+		<div class="alert alert-danger mt-3" role="alert">
+			@errorMessage
+		</div>
+	}
+</EditForm>
+
+@code {
+	[Parameter, SupplyParameterFromQuery]
+	public string? ReturnUrl { get; set; }
+
+	private readonly LoginInputModel loginInputModel = new() { Email = "test@test.com", Password = "Test123!", RememberMe = true, ClientType = ClientType.Blazor };
+	private string? errorMessage;
+
+	private async Task LoginAsync()
+	{
+		Result<TokenDTO> loginResult = await AuthService.LoginAsync(loginInputModel);
+
+		if (!loginResult.IsSuccess)
+		{
+			errorMessage = loginResult.ErrorMessage + " " + loginResult.ExceptionMessage + " " + loginResult.InnerExceptionMessage + " " + loginResult.StackTrace;
+
+			return;
+		}
+
+		NavigationManager.NavigateTo(!string.IsNullOrWhiteSpace(ReturnUrl) ? ReturnUrl : "/", forceLoad: true);
+	}
+}

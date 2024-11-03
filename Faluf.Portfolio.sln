@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35424.110
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "A. Core", "A. Core", "{7BDF940B-4EA2-442F-BA99-2B7289E39C53}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "B. Infrastructure", "B. Infrastructure", "{0997CEA5-5127-496E-B647-7718F4AA5EB1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "C. Blazor", "C. Blazor", "{A3D1BFCC-A8DC-471D-9E37-E1820A953496}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Faluf.Portfolio.Core", "Faluf.Portfolio.Core\Faluf.Portfolio.Core.csproj", "{82BC3287-B459-498E-A57C-8B4A366E8538}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Faluf.Portfolio.Infrastructure", "Faluf.Portfolio.Infrastructure\Faluf.Portfolio.Infrastructure.csproj", "{184F6CD1-50B6-4C50-851F-5801A71C34D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Faluf.Portfolio.Blazor", "Faluf.Portfolio.Blazor\Faluf.Portfolio.Blazor\Faluf.Portfolio.Blazor.csproj", "{EF69C410-46DE-4038-9B01-5B1082DA7718}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Faluf.Portfolio.Blazor.Client", "Faluf.Portfolio.Blazor\Faluf.Portfolio.Blazor.Client\Faluf.Portfolio.Blazor.Client.csproj", "{E8B2D840-5195-4999-91E7-7A40C5295E78}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{82BC3287-B459-498E-A57C-8B4A366E8538}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82BC3287-B459-498E-A57C-8B4A366E8538}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82BC3287-B459-498E-A57C-8B4A366E8538}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82BC3287-B459-498E-A57C-8B4A366E8538}.Release|Any CPU.Build.0 = Release|Any CPU
+		{184F6CD1-50B6-4C50-851F-5801A71C34D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{184F6CD1-50B6-4C50-851F-5801A71C34D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{184F6CD1-50B6-4C50-851F-5801A71C34D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{184F6CD1-50B6-4C50-851F-5801A71C34D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF69C410-46DE-4038-9B01-5B1082DA7718}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF69C410-46DE-4038-9B01-5B1082DA7718}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF69C410-46DE-4038-9B01-5B1082DA7718}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF69C410-46DE-4038-9B01-5B1082DA7718}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8B2D840-5195-4999-91E7-7A40C5295E78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8B2D840-5195-4999-91E7-7A40C5295E78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8B2D840-5195-4999-91E7-7A40C5295E78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8B2D840-5195-4999-91E7-7A40C5295E78}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{82BC3287-B459-498E-A57C-8B4A366E8538} = {7BDF940B-4EA2-442F-BA99-2B7289E39C53}
+		{184F6CD1-50B6-4C50-851F-5801A71C34D8} = {0997CEA5-5127-496E-B647-7718F4AA5EB1}
+		{EF69C410-46DE-4038-9B01-5B1082DA7718} = {A3D1BFCC-A8DC-471D-9E37-E1820A953496}
+		{E8B2D840-5195-4999-91E7-7A40C5295E78} = {A3D1BFCC-A8DC-471D-9E37-E1820A953496}
+	EndGlobalSection
+EndGlobal

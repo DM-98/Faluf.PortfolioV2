@@ -1,0 +1,85 @@
+﻿@page "/register"
+
+@inject NavigationManager NavigationManager
+@inject IUserService UserService
+@inject IStringLocalizer<Register> Localizer
+
+<h3>@Localizer["Register"]</h3>
+
+<EditForm Model="@registerInputModel" OnValidSubmit="RegisterAsync" Context="formContext">
+	<FluentValidationValidator />
+
+	<!-- Username Field -->
+	<div class="mb-3">
+		<label for="firstName" class="form-label">@Localizer["Username"]:</label>
+		<InputText id="firstName" @bind-Value="@registerInputModel.Username" />
+		<ValidationMessage For="@(() => registerInputModel.Username)" />
+	</div>
+
+	<!-- Email Field -->
+	<div class="mb-3">
+		<label for="email" class="form-label">@Localizer["Email"]:</label>
+		<InputText id="email" @bind-Value="@registerInputModel.Email" />
+		<ValidationMessage For="@(() => registerInputModel.Email)" />
+	</div>
+
+	<!-- Password Field -->
+	<div class="mb-3">
+		<label for="password" class="form-label">@Localizer["Password"]:</label>
+		<InputText id="password" @bind-Value="@registerInputModel.Password" />
+		<ValidationMessage For="@(() => registerInputModel.Password)" />
+	</div>
+
+	<!-- Confirm Password Field -->
+	<div class="mb-3">
+		<label for="confirmPassword" class="form-label">@Localizer["ConfirmPassword"]:</label>
+		<InputText id="confirmPassword" @bind-Value="@registerInputModel.ConfirmPassword" />
+		<ValidationMessage For="@(() => registerInputModel.ConfirmPassword)" />
+	</div>
+
+	<!-- Terms Accepted Checkbox -->
+	<div class="form-check mb-3">
+		<InputCheckbox id="isTermsAccepted" class="form-check-input" @bind-Value="@registerInputModel.IsTermsAccepted" />
+		<label for="isTermsAccepted" class="form-check-label">@Localizer["AcceptTerms"]:</label>
+		<ValidationMessage For="@(() => registerInputModel.IsTermsAccepted)" />
+	</div>
+
+	<!-- Register Button -->
+	<div class="mb-3">
+		<button type="submit" class="btn btn-primary btn-block">Register</button>
+	</div>
+
+	@if (!string.IsNullOrWhiteSpace(errorMessage))
+	{
+		<div class="alert alert-danger mt-3" role="alert">
+			@errorMessage
+		</div>
+	}
+</EditForm>
+
+@code {
+	private readonly RegisterInputModel registerInputModel = new()
+	{
+		Username = "Skod",
+		Email = "test@test.com",
+		Password = "Test123!",
+		ConfirmPassword = "Test123!",
+		IsTermsAccepted = true
+	};
+
+	private string? errorMessage;
+
+	private async Task RegisterAsync()
+	{
+		Result<User> registerResult = await UserService.RegisterAsync(registerInputModel);
+
+		if (!registerResult.IsSuccess)
+		{
+			errorMessage = registerResult.ErrorMessage + " " + registerResult.ExceptionMessage + " " + registerResult.InnerExceptionMessage + " " + registerResult.StackTrace;
+
+			return;
+		}
+
+		NavigationManager.NavigateTo("/login");
+	}
+}

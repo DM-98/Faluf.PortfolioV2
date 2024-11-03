@@ -1,0 +1,10 @@
+﻿global using Faluf.Portfolio.Blazor;
+global using Faluf.Portfolio.Blazor.Helpers;
+global using Faluf.Portfolio.Blazor.Services;
+global using Faluf.Portfolio.Core.DTOs.Inputs;
+global using Faluf.Portfolio.Core.DTOs.Outputs;
+global using Faluf.Portfolio.Core.Interfaces.Repositories;
+global using Faluf.Portfolio.Core.Interfaces.Services;
+global using Faluf.Portfolio.Infrastructure.Contexts;
+global using Faluf.Portfolio.Infrastructure.Repositories;
+global using Faluf.Portfolio.Infrastructure.Services;
