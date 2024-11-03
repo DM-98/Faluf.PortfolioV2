@@ -10,9 +10,6 @@ public sealed class ClientUserService(HttpClient httpClient, IStringLocalizer<Cl
         try
         {
             HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/User/Register", registerInputModel, cancellationToken);
-
-            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-
             Result<User> registerResult = await response.Content.ReadFromJsonAsync<Result<User>>(cancellationToken) ?? Result.BadRequest<User>(stringLocalizer["UnableToDeserialize"]);
 
             return registerResult;
