@@ -1,5 +1,4 @@
-﻿using Faluf.Portfolio.Core.DTOs.Inputs;
-using FluentValidation;
+﻿using FluentValidation;
 using Microsoft.Extensions.Localization;
 
 namespace Faluf.Portfolio.Core.Validators;
