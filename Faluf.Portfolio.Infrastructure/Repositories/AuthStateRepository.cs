@@ -1,6 +1,4 @@
 ﻿using Faluf.Portfolio.Core.Enums;
-using Faluf.Portfolio.Infrastructure.Abstractions;
-using Faluf.Portfolio.Infrastructure.Contexts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Faluf.Portfolio.Infrastructure.Repositories;
