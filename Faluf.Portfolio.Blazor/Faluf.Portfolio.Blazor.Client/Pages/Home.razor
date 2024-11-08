@@ -14,6 +14,7 @@
 			<p>AuthenticationType: @context.User.Identity?.AuthenticationType</p>
 			<p>IsInRole("Admin"): @context.User.IsInRole("Admin")</p>
 			<p>IsInRole("User"): @context.User.IsInRole("User")</p>
+			<p>RefreshToken: @context.User.Claims.First(x => x.Type == "jti").Value</p>
 		</div>
 
 		<form action="api/Auth/Logout" method="post" @formname="LogoutForm">

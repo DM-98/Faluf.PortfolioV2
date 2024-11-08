@@ -66,7 +66,7 @@ public static class ServiceCollectionHelper
                 ValidAudience = configuration["JWT:Audience"]!,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"]!)),
                 ClockSkew = TimeSpan.Zero
-            };
+			};
 
             // Since we are using cookies to store the token, we need to manually set the token during prerendering (Works in InteractiveServer and InteractiveWebAssembly and InteractiveAuto)
             options.Events = new JwtBearerEvents

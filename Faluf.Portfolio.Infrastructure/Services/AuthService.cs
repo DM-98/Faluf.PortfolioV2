@@ -1,8 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -11,7 +9,7 @@ using BCryptNext = BCrypt.Net.BCrypt;
 
 namespace Faluf.Portfolio.Infrastructure.Services;
 
-public sealed class AuthService(ILogger<AuthService> logger, IDataProtectionProvider dataProtectionProvider, IHttpContextAccessor httpContextAccessor, IAuthStateRepository authStateRepository, IUserRepository userRepository, IStringLocalizer<AuthService> stringLocalizer, IConfiguration configuration) 
+public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepository authStateRepository, IUserRepository userRepository, IStringLocalizer<AuthService> stringLocalizer, IConfiguration configuration) 
     : IAuthService
 {
     private readonly string secret = configuration["JWT:Secret"]!;
@@ -20,8 +18,6 @@ public sealed class AuthService(ILogger<AuthService> logger, IDataProtectionProv
     private readonly int accessTokenExpiryInMinutes = int.Parse(configuration["JWT:AccessTokenExpiryInMinutes"]!);
     private readonly int refreshTokenExpiryInDays = int.Parse(configuration["JWT:RefreshTokenExpiryInDays"]!);
     private readonly int maxFailedLoginCount = int.Parse(configuration["MaxFailedLoginCount"]!);
-    private readonly HttpContext httpContext = httpContextAccessor.HttpContext!;
-    private readonly IDataProtector dataProtector = dataProtectionProvider.CreateProtector(nameof(AuthService));
 
     public async Task<Result<TokenDTO>> LoginAsync(LoginInputModel loginInputModel, CancellationToken cancellationToken = default)
     {
@@ -79,17 +75,6 @@ public sealed class AuthService(ILogger<AuthService> logger, IDataProtectionProv
 
             string accessToken = GenerateAccessToken(claims);
 
-            CookieOptions cookieOptions = new()
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Lax,
-                Expires = loginInputModel.RememberMe ? DateTimeOffset.UtcNow.AddYears(1) : null
-            };
-
-            httpContext.Response.Cookies.Append("accessToken", dataProtector.Protect(accessToken), cookieOptions);
-            httpContext.Response.Cookies.Append("rememberMe", dataProtector.Protect(loginInputModel.RememberMe.ToString()), cookieOptions);
-
             return Result.Ok(new TokenDTO(accessToken, authState.RefreshToken));
         }
         catch (Exception ex)
@@ -100,35 +85,27 @@ public sealed class AuthService(ILogger<AuthService> logger, IDataProtectionProv
         }
     }
 
-    public async Task<Result<IEnumerable<Claim>>> RefreshTokensAsync(CancellationToken cancellationToken = default)
+    public async Task<Result<TokenDTO>> RefreshTokensAsync(TokenDTO? tokenDTO = null, CancellationToken cancellationToken = default)
     {
-        try
+		if (tokenDTO is null)
+		{
+			return Result.BadRequest<TokenDTO>(stringLocalizer["TokenRequired"]);
+		}
+
+		try
         {
-            string? accessToken = httpContext.Request.Cookies["accessToken"];
-
-            if (accessToken is null)
-            {
-                return Result.Unauthorized<IEnumerable<Claim>>(stringLocalizer["Unauthorized"]);
-            }
-
-            IEnumerable<Claim>? claims = await ValidateAccessTokenAsync(accessToken).ConfigureAwait(false);
+            IEnumerable<Claim>? claims = await ValidateAccessTokenAsync(tokenDTO.AccessToken).ConfigureAwait(false);
 
             if (claims is null)
             {
-                httpContext.Response.Cookies.Delete("accessToken");
-                httpContext.Response.Cookies.Delete("rememberMe");
-
-                return Result.Unauthorized<IEnumerable<Claim>>(stringLocalizer["Unauthorized"]);
+                return Result.Unauthorized<TokenDTO>(stringLocalizer["Unauthorized"]);
             }
 
             AuthState? authState = await authStateRepository.GetByRefreshTokenAsync(claims.First(x => x.Type is JwtRegisteredClaimNames.Jti).Value, cancellationToken).ConfigureAwait(false);
 
             if (authState is null or { RefreshToken: null } || authState.RefreshTokentExpiresAt < DateTimeOffset.UtcNow)
             {
-                httpContext.Response.Cookies.Delete("accessToken");
-                httpContext.Response.Cookies.Delete("rememberMe");
-
-                return Result.Unauthorized<IEnumerable<Claim>>(stringLocalizer["Unauthorized"]);
+                return Result.Unauthorized<TokenDTO>(stringLocalizer["Unauthorized"]);
             }
 
             if (authState.LockoutEndAt > DateTimeOffset.UtcNow)
@@ -137,7 +114,7 @@ public sealed class AuthService(ILogger<AuthService> logger, IDataProtectionProv
                 double lockoutEndMinutes = Math.Ceiling(lockoutEnd.TotalMinutes);
                 double lockoutEndSeconds = Math.Ceiling(lockoutEnd.TotalSeconds);
 
-                return Result.Locked<IEnumerable<Claim>>(stringLocalizer["AccountLocked", lockoutEndMinutes, lockoutEndSeconds]);
+                return Result.Locked<TokenDTO>(stringLocalizer["AccountLocked", lockoutEndMinutes, lockoutEndSeconds]);
             }
 
             authState.RefreshToken = Guid.NewGuid().ToString();
@@ -145,54 +122,19 @@ public sealed class AuthService(ILogger<AuthService> logger, IDataProtectionProv
 
             await authStateRepository.UpsertAsync(authState, cancellationToken).ConfigureAwait(false);
 
-            string? rememberMe = httpContext.Request.Cookies["rememberMe"];
-
-            CookieOptions cookieOptions = new()
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Lax,
-                Expires = bool.Parse(!string.IsNullOrWhiteSpace(rememberMe) ? dataProtector.Unprotect(rememberMe) : "False") ? DateTimeOffset.UtcNow.AddYears(1) : null
-            };
-
             List<Claim> newClaims =
             [
                 ..claims.Where(x => x.Type is not JwtRegisteredClaimNames.Jti),
                 new(JwtRegisteredClaimNames.Jti, authState.RefreshToken)
             ];
 
-            string newAccessToken = GenerateAccessToken(newClaims);
-
-            httpContext.Response.Cookies.Append("accessToken", dataProtector.Protect(newAccessToken), cookieOptions);
-
-            return Result.Ok<IEnumerable<Claim>>(newClaims);
+            return Result.Ok(new TokenDTO(GenerateAccessToken(newClaims), authState.RefreshToken));
         }
         catch (Exception ex)
         {
             logger.LogException(ex);
 
-            return Result.InternalServerError<IEnumerable<Claim>>(stringLocalizer["InternalServerError"], ex);
-        }
-    }
-
-    public Task<Result<IEnumerable<Claim>>> GetCurrentClaimsAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            string? accessToken = httpContext.Request.Cookies["accessToken"];
-
-            if (accessToken is null)
-            {
-                return Task.FromResult(Result.Unauthorized<IEnumerable<Claim>>(stringLocalizer["Unauthorized"]));
-            }
-
-            return Task.FromResult(Result.Ok(new JwtSecurityTokenHandler().ReadJwtToken(dataProtector.Unprotect(accessToken)).Claims));
-        }
-        catch (Exception ex)
-        {
-            logger.LogException(ex);
-
-            return Task.FromResult(Result.InternalServerError<IEnumerable<Claim>>(stringLocalizer["InternalServerError"], ex));
+            return Result.InternalServerError<TokenDTO>(stringLocalizer["InternalServerError"], ex);
         }
     }
 
@@ -225,7 +167,7 @@ public sealed class AuthService(ILogger<AuthService> logger, IDataProtectionProv
 
         TokenValidationResult validationResult = await new JwtSecurityTokenHandler().ValidateTokenAsync(accessToken, tokenValidationParameters);
 
-        if (validationResult.SecurityToken is JwtSecurityToken jwtSecurityToken)
+        if (validationResult.IsValid && validationResult.SecurityToken is JwtSecurityToken jwtSecurityToken)
         {
             return jwtSecurityToken.Claims;
         }

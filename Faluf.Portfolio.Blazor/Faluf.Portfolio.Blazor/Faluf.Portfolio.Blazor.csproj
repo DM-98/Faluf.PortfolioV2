@@ -13,13 +13,13 @@
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0-rc.2.24474.3" />
 		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.0-rc.2.24474.3" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0-rc.2.24474.1">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Serilog.AspNetCore.Ingestion" Version="1.0.0-dev-00032" />
 		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.9.0" />
 	</ItemGroup>
-	
+
 	<ItemGroup>
 		<ProjectReference Include="..\..\Faluf.Portfolio.Infrastructure\Faluf.Portfolio.Infrastructure.csproj" />
 		<ProjectReference Include="..\Faluf.Portfolio.Blazor.Client\Faluf.Portfolio.Blazor.Client.csproj" />

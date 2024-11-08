@@ -6,26 +6,26 @@
 
 <h3>@Localizer["Login"]</h3>
 
-<EditForm Model="@loginInputModel" OnValidSubmit="LoginAsync">
+<EditForm Model="@LoginInputModel" OnValidSubmit="LoginAsync" FormName="LoginForm">
 	<FluentValidationValidator />
 
-	<!-- Email Field -->
+	<!-- Email -->
 	<div class="mb-3">
 		<label for="email" class="form-label">@Localizer["Email"]:</label>
-		<InputText id="email" @bind-Value="@loginInputModel.Email" class="form-control" />
-		<ValidationMessage For="@(() => loginInputModel.Email)" class="text-danger" />
+		<InputText id="email" @bind-Value="@LoginInputModel.Email" class="form-control" />
+		<ValidationMessage For="@(() => LoginInputModel.Email)" class="text-danger" />
 	</div>
 
-	<!-- Password Field -->
+	<!-- Password -->
 	<div class="mb-3">
 		<label for="password" class="form-label">@Localizer["Password"]:</label>
-		<InputText id="password" type="password" @bind-Value="@loginInputModel.Password" class="form-control" />
-		<ValidationMessage For="@(() => loginInputModel.Password)" class="text-danger" />
+		<InputText id="password" type="password" @bind-Value="@LoginInputModel.Password" class="form-control" />
+		<ValidationMessage For="@(() => LoginInputModel.Password)" class="text-danger" />
 	</div>
 
 	<!-- Remember Me Checkbox -->
 	<div class="form-check mb-3">
-		<InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="@loginInputModel.RememberMe" />
+		<InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="@LoginInputModel.RememberMe" />
 		<label class="form-check-label" for="rememberMe">@Localizer["StayLoggedIn"]</label>
 	</div>
 
@@ -46,12 +46,14 @@
 	[Parameter, SupplyParameterFromQuery]
 	public string? ReturnUrl { get; set; }
 
-	private readonly LoginInputModel loginInputModel = new() { Email = "test@test.com", Password = "Test123!", RememberMe = true, ClientType = ClientType.Blazor };
+	[SupplyParameterFromForm(FormName = "LoginForm")]
+	private LoginInputModel LoginInputModel { get; set; } = new() { Email = "test@test.com", Password = "Test123!", RememberMe = true, ClientType = ClientType.Blazor };
+
 	private string? errorMessage;
 
 	private async Task LoginAsync()
 	{
-		Result<TokenDTO> loginResult = await AuthService.LoginAsync(loginInputModel);
+		Result<TokenDTO> loginResult = await AuthService.LoginAsync(LoginInputModel);
 
 		if (!loginResult.IsSuccess)
 		{

@@ -19,6 +19,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\Faluf.Portfolio.Core\Faluf.Portfolio.Core.csproj" />
+		<ProjectReference Include="..\..\Faluf.Portfolio.Core\Faluf.Portfolio.Core.csproj" />
 	</ItemGroup>
 </Project>
