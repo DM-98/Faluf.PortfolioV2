@@ -1,0 +1,51 @@
+﻿@page "/account/profile"
+
+<div class="row">
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-body">
+				<AuthorizeView>
+					<h5 class="card-title">Welcome, @context.User.Identity?.Name</h5>
+					<p class="card-text">You can manage your profile here.</p>
+
+					<div class="gap-3">
+						<p>IsAuthenticated: @context.User.Identity?.IsAuthenticated</p>
+						<p>AuthenticationType: @context.User.Identity?.AuthenticationType</p>
+						<p>IsInRole("Admin"): @context.User.IsInRole("Admin")</p>
+						<p>IsInRole("User"): @context.User.IsInRole("User")</p>
+						<p>RefreshToken: @context.User.Claims.First(x => x.Type == "jti").Value</p>
+					</div>
+				</AuthorizeView>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-6">
+		<div class="card mt-3 mt-lg-0">
+			<div class="card-body">
+				<h5 class="card-title">Profile Information</h5>
+				<p class="card-text">Your profile information will be displayed here.</p>
+			</div>
+		</div>
+
+		<div class="card mt-3">
+			<div class="card-body">
+				<h5 class="card-title">Change Password</h5>
+				<p class="card-text">You can change your password here.</p>
+			</div>
+
+			<div class="card-footer">
+				<NavLink href="account/change-password" class="btn btn-primary">Change Password</NavLink>
+				<NavLink href="account/forgot-password" class="btn btn-link">Forgot Password?</NavLink>
+				<NavLink href="account/reset-password" class="btn btn-link">Reset Password</NavLink>
+			</div>
+		</div>
+	</div>
+</div>
+
+@code {
+	protected override void OnInitialized()
+	{
+		Logger.LogInformation("Profile page initialized.");
+	}
+}

@@ -7,56 +7,64 @@
 @inject NavigationManager NavigationManager
 @inject IConfiguration Configuration
 
-<SerilogErrorBoundary @ref="errorBoundary">
-	<ChildContent>
-		<p>Rendermode: @RendererInfo.Name</p>
-		<p>Is interactive: @RendererInfo.IsInteractive</p>
+<div class="page">
+	<div class="sidebar sticky-top">
+		<Sidebar />
+	</div>
 
-		@Body
-	</ChildContent>
+	<main>
+		<div class="top-row px-4">
+			<span class="me-2"><b>Memory usage</b>: @((GC.GetTotalMemory(false) / 1024.0 / 1024.0).ToString("F2")) MB | </span>
 
-	<ErrorContent>
-		<h1>Oops!</h1>
+			<span class="me-2"><b>Current RenderMode</b>: @RendererInfo.Name @(RendererInfo.IsInteractive ? new MarkupString("""<span class="text-success">Interactive</span>""") : new MarkupString("""<span class="text-danger">Non-interactive</span>"""))</span>
+		</div>
 
-		<p>@Localizer["ErrorOccurredInApplication", context.HelpLink ?? string.Empty].</p>
+		<article class="content p-2 p-lg-3">
+			<SerilogErrorBoundary @ref="errorBoundary">
+				<ChildContent>
+					@Body
+				</ChildContent>
 
-		<button class="btn btn-primary" @onclick="errorBoundary.Recover">
-			@Localizer["Recover"]
-		</button>
-	</ErrorContent>
-</SerilogErrorBoundary>
+				<ErrorContent>
+					<h1>Oops!</h1>
+
+					<p>@Localizer["ErrorOccurredInApplication", context.HelpLink ?? string.Empty].</p>
+
+					<button class="btn btn-primary" @onclick="errorBoundary.Recover">
+						@Localizer["Recover"]
+					</button>
+				</ErrorContent>
+			</SerilogErrorBoundary>
+		</article>
+	</main>
+</div>
 
 @code {
 	[CascadingParameter]
 	private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
 
 	private ErrorBoundary errorBoundary = null!;
-	private PeriodicTimer? timer;
+	private PeriodicTimer? revalidationTimer;
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if (firstRender)
 		{
-			timer ??= new PeriodicTimer(TimeSpan.FromMinutes(long.Parse(Configuration["RevalidationIntervalInMinutes"]!)));
+			revalidationTimer ??= new(TimeSpan.FromSeconds(10));
 
-			while (await timer.WaitForNextTickAsync() && (await AuthenticationStateTask).User.Identity is { IsAuthenticated: true })
+			while (await revalidationTimer.WaitForNextTickAsync() && (await AuthenticationStateTask).User.Identity is { IsAuthenticated: true })
 			{
 				Result<TokenDTO> result = await AuthService.RefreshTokensAsync();
 
 				if (!result.IsSuccess)
 				{
-					timer.Dispose();
+					revalidationTimer.Dispose();
 
 					NavigationManager.Refresh(forceReload: true);
 				}
-
-				await InvokeAsync(StateHasChanged);
 			}
 		}
 	}
 
-	public void Dispose()
-	{
-		timer?.Dispose();
-	}
+	public void Dispose() => revalidationTimer?.Dispose();
 }
