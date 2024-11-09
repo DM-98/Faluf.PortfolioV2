@@ -1,4 +1,5 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System.Collections.Concurrent;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Configuration;
@@ -12,6 +13,8 @@ namespace Faluf.Portfolio.Infrastructure.Services;
 public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepository authStateRepository, IUserRepository userRepository, IStringLocalizer<AuthService> stringLocalizer, IConfiguration configuration) 
     : IAuthService
 {
+    public static ConcurrentQueue<(TokenDTO TokenDTO, bool IsPersisted)> LoginQueue { get; private set; } = [];
+
     private readonly string secret = configuration["JWT:Secret"]!;
     private readonly string issuer = configuration["JWT:Issuer"]!;
     private readonly string audience = configuration["JWT:Audience"]!;
@@ -31,7 +34,7 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
             }
 
             AuthState? authState = await authStateRepository.GetByUserIdAndClientTypeAsync(user.Id, loginInputModel.ClientType, cancellationToken).ConfigureAwait(false);
-            authState ??= new AuthState { UserId = user.Id, ClientType = loginInputModel.ClientType };
+            authState ??= new AuthState { UserId = user.Id, ClientType = loginInputModel.ClientType, IsPersistent = loginInputModel.IsPersistent };
 
             if (authState.LockoutEndAt > DateTimeOffset.UtcNow)
             {
@@ -75,7 +78,11 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
 
             string accessToken = GenerateAccessToken(claims);
 
-            return Result.Ok(new TokenDTO(accessToken, authState.RefreshToken));
+            TokenDTO tokenDTO = new(accessToken, authState.RefreshToken);
+
+            LoginQueue.Enqueue((tokenDTO, loginInputModel.IsPersistent));
+
+            return Result.Ok(tokenDTO);
         }
         catch (Exception ex)
         {

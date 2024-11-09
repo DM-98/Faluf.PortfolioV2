@@ -1,6 +1,4 @@
-﻿using Faluf.Portfolio.Core.Domain;
-
-namespace Faluf.Portfolio.Core.Interfaces.Repositories;
+﻿namespace Faluf.Portfolio.Core.Interfaces.Repositories;
 
 public interface IAuthStateRepository : IBaseRepository<AuthState>
 {

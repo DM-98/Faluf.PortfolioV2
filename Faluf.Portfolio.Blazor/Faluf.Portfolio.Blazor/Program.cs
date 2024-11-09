@@ -1,4 +1,5 @@
 using System.Reflection;
+using Faluf.Portfolio.Blazor.Middlewares;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
@@ -49,6 +50,8 @@ app.UseSerilogIngestion();
 
 string[] supportedCultures = ["en-US", "da-DK"];
 app.UseRequestLocalization(new RequestLocalizationOptions().SetDefaultCulture(supportedCultures[0]).AddSupportedCultures(supportedCultures).AddSupportedUICultures(supportedCultures));
+
+app.UseCookieAuthMiddleware();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode().AddInteractiveWebAssemblyRenderMode().AddAdditionalAssemblies(Assembly.Load("Faluf.Portfolio.Blazor.Client")).AllowAnonymous();

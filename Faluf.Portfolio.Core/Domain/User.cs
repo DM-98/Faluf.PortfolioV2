@@ -10,7 +10,7 @@ public sealed class User : BaseEntity
 
     public string HashedPassword { get; set; } = null!;
 
-    public DateTime? TermsAndPrivacyPolicyAcceptedAt { get; set; }
+    public DateTimeOffset? TermsAndPrivacyPolicyAcceptedAt { get; set; }
 
     public List<string> Roles { get; set; } = [];
 

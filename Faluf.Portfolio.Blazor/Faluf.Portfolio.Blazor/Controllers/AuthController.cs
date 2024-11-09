@@ -22,11 +22,11 @@ public sealed class AuthController(IDataProtectionProvider dataProtectionProvide
 				HttpOnly = true,
 				Secure = true,
 				SameSite = SameSiteMode.Lax,
-				Expires = loginInputModel.RememberMe ? DateTime.UtcNow.AddMonths(1) : null
+				Expires = loginInputModel.IsPersistent ? DateTime.UtcNow.AddMonths(1) : null
 			};
 
 			Response.Cookies.Append(Globals.AccessToken, dataProtector.Protect(result.Content.AccessToken), cookieOptions);
-			Response.Cookies.Append(Globals.RememberMe, loginInputModel.RememberMe.ToString(), cookieOptions);
+			Response.Cookies.Append(Globals.IsPersistent, dataProtector.Protect(loginInputModel.IsPersistent.ToString()), cookieOptions);
 		}
 
 		return StatusCode((int)result.StatusCode, result);
@@ -35,10 +35,7 @@ public sealed class AuthController(IDataProtectionProvider dataProtectionProvide
     [HttpGet("RefreshTokens")]
     public async Task<ActionResult<Result<TokenDTO>>> RefreshTokensAsync(CancellationToken cancellationToken = default)
     {
-		// Check the header for the access token [Mobile & External Clients]
 		string? accessToken = Request.Headers.Authorization.ToString().Replace("Bearer ", string.Empty);
-
-		// If the access token is not in the header, check the cookies [Web Client]
 		accessToken ??= Request.Cookies[Globals.AccessToken] is { } encryptedAccessToken ? dataProtector.Unprotect(encryptedAccessToken) : null;
 
 		if (accessToken is null)
@@ -50,16 +47,19 @@ public sealed class AuthController(IDataProtectionProvider dataProtectionProvide
 
 		if (result.IsSuccess)
 		{
-			CookieOptions cookieOptions = new()
+            bool rememberMe = Request.Cookies[Globals.IsPersistent] is { } rememberMeString && Convert.ToBoolean(dataProtector.Unprotect(rememberMeString));
+
+            CookieOptions cookieOptions = new()
 			{
 				HttpOnly = true,
 				Secure = true,
 				SameSite = SameSiteMode.Lax,
-				Expires = DateTime.UtcNow.AddMonths(1)
+				Expires = rememberMe ? DateTime.UtcNow.AddYears(1) : null
 			};
 
 			Response.Cookies.Append(Globals.AccessToken, dataProtector.Protect(result.Content.AccessToken), cookieOptions);
-		}
+            Response.Cookies.Append(Globals.IsPersistent, dataProtector.Protect(rememberMe.ToString()), cookieOptions);
+        }
 
 		return StatusCode((int)result.StatusCode, result);
     }
@@ -68,8 +68,8 @@ public sealed class AuthController(IDataProtectionProvider dataProtectionProvide
     public IActionResult Logout()
     {
         Response.Cookies.Delete(Globals.AccessToken);
-        Response.Cookies.Delete(Globals.RememberMe);
+        Response.Cookies.Delete(Globals.IsPersistent);
 
-        return NoContent();
+        return LocalRedirect("/");
     }
 }

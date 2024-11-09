@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Text;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
@@ -66,18 +67,17 @@ public static class ServiceCollectionHelper
                 ValidAudience = configuration["JWT:Audience"]!,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"]!)),
                 ClockSkew = TimeSpan.Zero
-			};
+            };
 
-            // Since we are using cookies to store the token, we need to manually set the token during prerendering (Works in InteractiveServer and InteractiveWebAssembly and InteractiveAuto)
             options.Events = new JwtBearerEvents
             {
                 OnMessageReceived = context =>
                 {
-                    string? accessToken = context.Request.Cookies["accessToken"];
+                    string? accessToken = context.Request.Cookies[Globals.AccessToken];
 
                     if (!string.IsNullOrWhiteSpace(accessToken))
                     {
-                        IDataProtector dataProtector = context.HttpContext.RequestServices.GetRequiredService<IDataProtectionProvider>().CreateProtector(nameof(AuthService));
+                        IDataProtector dataProtector = context.HttpContext.RequestServices.GetRequiredService<IDataProtectionProvider>().CreateProtector(Globals.AuthProtector);
                         context.Token = dataProtector.Unprotect(accessToken);
                     }
 

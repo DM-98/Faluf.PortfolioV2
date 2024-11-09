@@ -40,6 +40,9 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsPersistent")
+                        .HasColumnType("bit");
+
                     b.Property<DateTimeOffset?>("LockoutEndAt")
                         .HasColumnType("datetimeoffset");
 
@@ -59,7 +62,7 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AuthStates", (string)null);
+                    b.ToTable("AuthStates");
                 });
 
             modelBuilder.Entity("Faluf.Portfolio.Core.Domain.Post", b =>
@@ -95,7 +98,7 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.ToTable("Posts", (string)null);
+                    b.ToTable("Posts");
                 });
 
             modelBuilder.Entity("Faluf.Portfolio.Core.Domain.User", b =>
@@ -125,8 +128,8 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("TermsAndPrivacyPolicyAcceptedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("TermsAndPrivacyPolicyAcceptedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -137,7 +140,7 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
@@ -156,7 +159,7 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DataProtectionKeys", (string)null);
+                    b.ToTable("DataProtectionKeys");
                 });
 
             modelBuilder.Entity("Faluf.Portfolio.Core.Domain.AuthState", b =>

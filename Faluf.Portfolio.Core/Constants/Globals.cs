@@ -1,4 +1,6 @@
-﻿namespace Faluf.Portfolio.Core.Constants;
+﻿using System.Collections.Concurrent;
+
+namespace Faluf.Portfolio.Core.Constants;
 
 public static class Globals
 {
@@ -6,9 +8,13 @@ public static class Globals
 
 	public const string RefreshToken = nameof(RefreshToken);
 
-	public const string RememberMe = nameof(RememberMe);
+	public const string IsPersistent = nameof(IsPersistent);
 
 	public const string AuthProtector = nameof(AuthProtector);
 
 	public const string JWTAuthType = nameof(JWTAuthType);
+
+	public const string ProcessLogin = nameof(ProcessLogin);
+
+	public const string ReturnUrl = nameof(ReturnUrl);
 }

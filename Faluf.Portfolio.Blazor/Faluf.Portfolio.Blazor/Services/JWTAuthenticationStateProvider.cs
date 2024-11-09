@@ -20,7 +20,9 @@ public sealed class JWTAuthenticationStateProvider(IDataProtectionProvider dataP
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
 
-        IEnumerable<Claim> claims = new JwtSecurityTokenHandler().ReadJwtToken(dataProtector.Unprotect(accessToken)).Claims;
+        accessToken = dataProtector.Unprotect(accessToken);
+
+        IEnumerable<Claim> claims = new JwtSecurityTokenHandler().ReadJwtToken(accessToken).Claims;
 
 		if (long.Parse(claims.First(x => x.Type is JwtRegisteredClaimNames.Exp).Value) > DateTimeOffset.UtcNow.ToUnixTimeSeconds())
         {
@@ -31,25 +33,26 @@ public sealed class JWTAuthenticationStateProvider(IDataProtectionProvider dataP
 
 		if (!refreshTokensResult.IsSuccess)
 		{
-			httpContext.Response.Cookies.Delete(Globals.AccessToken);
-			httpContext.Response.Cookies.Delete(Globals.RememberMe);
-
 			return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
 		}
 
-		bool rememberMe = httpContext.Request.Cookies[Globals.RememberMe] is { } rememberMeString && Convert.ToBoolean(dataProtector.Unprotect(rememberMeString));
+        bool isPersistent = httpContext.Request.Cookies[Globals.IsPersistent] is { } isPersistentString && bool.Parse(dataProtector.Unprotect(isPersistentString));
 
-		CookieOptions cookieOptions = new()
-		{
-			HttpOnly = true,
-			Secure = true,
-			SameSite = SameSiteMode.Lax,
-			Expires = rememberMe ? DateTimeOffset.UtcNow.AddYears(1) : null
-		};
+        CookieOptions cookieOptions = new()
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            Expires = isPersistent ? DateTimeOffset.UtcNow.AddYears(1) : null
+        };
 
-		httpContext.Response.Cookies.Append("accessToken", dataProtector.Protect(accessToken), cookieOptions);
-		httpContext.Response.Cookies.Append("rememberMe", dataProtector.Protect(rememberMe.ToString()), cookieOptions);
+        httpContext.Response.Cookies.Append(Globals.AccessToken, dataProtector.Protect(refreshTokensResult.Content.AccessToken), cookieOptions);
+        httpContext.Response.Cookies.Append(Globals.IsPersistent, dataProtector.Protect(isPersistent.ToString()), cookieOptions);
 
-		return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(new JwtSecurityTokenHandler().ReadJwtToken(refreshTokensResult.Content.AccessToken).Claims, Globals.JWTAuthType)));
+        AuthenticationState authenticationState = new(new ClaimsPrincipal(new ClaimsIdentity(new JwtSecurityTokenHandler().ReadJwtToken(refreshTokensResult.Content.AccessToken).Claims, Globals.JWTAuthType)));
+
+		SetAuthenticationState(Task.FromResult(authenticationState));
+
+		return authenticationState;
     }
 }

@@ -13,6 +13,8 @@ public sealed class AuthState : BaseEntity
 
     public int AccessFailedCount { get; set; }
 
+    public bool IsPersistent { get; set; }
+
     public DateTimeOffset? LockoutEndAt { get; set; }
 
     public required ClientType ClientType { get; init; }

@@ -6,7 +6,7 @@ public sealed class LoginInputModel
 
     public string Password { get; set; } = null!;
 
-    public bool RememberMe { get; set; }
+    public bool IsPersistent { get; set; }
 
-    public required ClientType ClientType { get; init; }
+    public required ClientType ClientType { get; set; }
 }

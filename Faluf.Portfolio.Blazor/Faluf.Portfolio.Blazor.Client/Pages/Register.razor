@@ -2,63 +2,63 @@
 
 @inject NavigationManager NavigationManager
 @inject IUserService UserService
-@inject IStringLocalizer<Register> Localizer
 
 <h3>@Localizer["Register"]</h3>
 
-<EditForm Model="@registerInputModel" OnValidSubmit="RegisterAsync" Context="formContext">
+<EditForm Model="@RegisterInputModel" OnValidSubmit="RegisterAsync" FormName="RegisterForm">
 	<FluentValidationValidator />
 
-	<!-- Username Field -->
+	<!-- Username -->
 	<div class="mb-3">
 		<label for="firstName" class="form-label">@Localizer["Username"]:</label>
-		<InputText id="firstName" @bind-Value="@registerInputModel.Username" />
-		<ValidationMessage For="@(() => registerInputModel.Username)" />
+		<InputText id="firstName" @bind-Value="@RegisterInputModel.Username" />
+		<ValidationMessage For="@(() => RegisterInputModel.Username)" />
 	</div>
 
-	<!-- Email Field -->
+	<!-- Email -->
 	<div class="mb-3">
 		<label for="email" class="form-label">@Localizer["Email"]:</label>
-		<InputText id="email" @bind-Value="@registerInputModel.Email" />
-		<ValidationMessage For="@(() => registerInputModel.Email)" />
+		<InputText id="email" @bind-Value="@RegisterInputModel.Email" />
+		<ValidationMessage For="@(() => RegisterInputModel.Email)" />
 	</div>
 
-	<!-- Password Field -->
+	<!-- Password -->
 	<div class="mb-3">
 		<label for="password" class="form-label">@Localizer["Password"]:</label>
-		<InputText id="password" @bind-Value="@registerInputModel.Password" />
-		<ValidationMessage For="@(() => registerInputModel.Password)" />
+		<InputText id="password" @bind-Value="@RegisterInputModel.Password" />
+		<ValidationMessage For="@(() => RegisterInputModel.Password)" />
 	</div>
 
-	<!-- Confirm Password Field -->
+	<!-- Confirm password -->
 	<div class="mb-3">
 		<label for="confirmPassword" class="form-label">@Localizer["ConfirmPassword"]:</label>
-		<InputText id="confirmPassword" @bind-Value="@registerInputModel.ConfirmPassword" />
-		<ValidationMessage For="@(() => registerInputModel.ConfirmPassword)" />
+		<InputText id="confirmPassword" @bind-Value="@RegisterInputModel.ConfirmPassword" />
+		<ValidationMessage For="@(() => RegisterInputModel.ConfirmPassword)" />
 	</div>
 
-	<!-- Terms Accepted Checkbox -->
+	<!-- Terms Accepted -->
 	<div class="form-check mb-3">
-		<InputCheckbox id="isTermsAccepted" class="form-check-input" @bind-Value="@registerInputModel.IsTermsAccepted" />
+		<InputCheckbox id="isTermsAccepted" class="form-check-input" @bind-Value="@RegisterInputModel.IsTermsAccepted" />
 		<label for="isTermsAccepted" class="form-check-label">@Localizer["AcceptTerms"]:</label>
-		<ValidationMessage For="@(() => registerInputModel.IsTermsAccepted)" />
+		<ValidationMessage For="@(() => RegisterInputModel.IsTermsAccepted)" />
 	</div>
 
-	<!-- Register Button -->
+	<!-- Register -->
 	<div class="mb-3">
 		<button type="submit" class="btn btn-primary btn-block">Register</button>
 	</div>
 
-	@if (!string.IsNullOrWhiteSpace(errorMessage))
+	@if (!string.IsNullOrWhiteSpace(ErrorMessage))
 	{
 		<div class="alert alert-danger mt-3" role="alert">
-			@errorMessage
+			@((MarkupString)ErrorMessage)
 		</div>
 	}
 </EditForm>
 
 @code {
-	private readonly RegisterInputModel registerInputModel = new()
+	[SupplyParameterFromForm(FormName = "RegisterForm")]
+	private RegisterInputModel RegisterInputModel { get; set; } = new()
 	{
 		Username = "Skod",
 		Email = "test@test.com",
@@ -67,15 +67,13 @@
 		IsTermsAccepted = true
 	};
 
-	private string? errorMessage;
-
 	private async Task RegisterAsync()
 	{
-		Result<User> registerResult = await UserService.RegisterAsync(registerInputModel);
+		Result<User> registerResult = await UserService.RegisterAsync(RegisterInputModel, CancellationToken);
 
 		if (!registerResult.IsSuccess)
 		{
-			errorMessage = registerResult.ErrorMessage + " " + registerResult.ExceptionMessage + " " + registerResult.InnerExceptionMessage + " " + registerResult.StackTrace;
+			SetErrorMessage(registerResult);
 
 			return;
 		}

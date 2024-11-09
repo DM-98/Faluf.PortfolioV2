@@ -8,7 +8,7 @@ public sealed class CultureController : Controller
 {
     public IActionResult Set(string culture, string redirectUri)
     {
-        HttpContext.Response.Cookies.Append(CookieRequestCultureProvider.DefaultCookieName, CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture, culture)));
+        Response.Cookies.Append(CookieRequestCultureProvider.DefaultCookieName, CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture, culture)));
 
         return LocalRedirect(redirectUri);
     }

@@ -1,6 +1,4 @@
-﻿using Faluf.Portfolio.Core.Domain;
-
-namespace Faluf.Portfolio.Core.Interfaces.Services;
+﻿namespace Faluf.Portfolio.Core.Interfaces.Services;
 
 public interface IUserService
 {

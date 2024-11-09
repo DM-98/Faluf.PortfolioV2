@@ -1,5 +1,4 @@
-﻿using Faluf.Portfolio.Core.Enums;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace Faluf.Portfolio.Infrastructure.Repositories;
 

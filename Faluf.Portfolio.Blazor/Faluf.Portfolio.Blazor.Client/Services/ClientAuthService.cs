@@ -35,19 +35,4 @@ public sealed class ClientAuthService(HttpClient httpClient, IStringLocalizer<Cl
             return Result.InternalServerError<TokenDTO>(stringLocalizer["InternalServerError"], ex);
         }
     }
-
-    public async Task<Result<TokenDTO>> GetCurrentClaimsAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            HttpResponseMessage response = await httpClient.GetAsync("api/Auth/GetCurrentClaims", cancellationToken);
-            Result<TokenDTO> GetCurrentClaimsResult = await response.Content.ReadFromJsonAsync<Result<TokenDTO>>(cancellationToken) ?? Result.BadRequest<TokenDTO>(stringLocalizer["UnableToDeserialize"]);
-
-            return GetCurrentClaimsResult;
-        }
-        catch (Exception ex)
-        {
-            return Result.InternalServerError<TokenDTO>(stringLocalizer["InternalServerError"], ex);
-        }
-    }
 }

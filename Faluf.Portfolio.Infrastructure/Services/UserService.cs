@@ -1,5 +1,4 @@
-﻿using Mapster;
-using Microsoft.Extensions.Localization;
+﻿using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using BCryptNext = BCrypt.Net.BCrypt;
 
@@ -12,14 +11,19 @@ public sealed class UserService(ILogger<UserService> logger, IStringLocalizer<Us
     {
         try
         {
-            User user = registerInputModel.Adapt<User>();
+            bool userExists = await userRepository.UserExistsAsync(registerInputModel.Email, registerInputModel.Username, cancellationToken).ConfigureAwait(false);
 
+            if (userExists)
+            {
+                return Result.BadRequest<User>(stringLocalizer["UserAlreadyExists"]);
+            }
+
+            User user = registerInputModel.ToUser();
             user.HashedPassword = BCryptNext.HashPassword(registerInputModel.Password);
-            user.Roles = ["User"];
 
-            User createdUser = await userRepository.UpsertAsync(user, cancellationToken).ConfigureAwait(false);
+            user = await userRepository.UpsertAsync(user, cancellationToken).ConfigureAwait(false);
 
-            return Result.Created(createdUser);
+            return Result.Created(user);
         }
         catch (Exception ex)
         {

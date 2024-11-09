@@ -2,6 +2,6 @@
 
 public enum ClientType
 {
-    Blazor,
-    MAUI
+    Web,
+    Mobile
 }

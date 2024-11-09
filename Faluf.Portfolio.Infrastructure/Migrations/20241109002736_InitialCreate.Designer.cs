@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Faluf.Portfolio.Infrastructure.Migrations
 {
     [DbContext(typeof(PortfolioDbContext))]
-    [Migration("20241103130752_InitialCreate")]
+    [Migration("20241109002736_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -42,6 +42,9 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPersistent")
+                        .HasColumnType("bit");
 
                     b.Property<DateTimeOffset?>("LockoutEndAt")
                         .HasColumnType("datetimeoffset");
@@ -128,8 +131,8 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("TermsAndPrivacyPolicyAcceptedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("TermsAndPrivacyPolicyAcceptedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");

@@ -2,7 +2,7 @@
 
 @inject IStringLocalizer<MainLayout> Localizer
 
-<SerilogErrorBoundary>
+<SerilogErrorBoundary @ref="errorBoundary">
 	<ChildContent>
 		<p>Rendermode: @RendererInfo.Name</p>
 		<p>Is interactive: @RendererInfo.IsInteractive</p>
