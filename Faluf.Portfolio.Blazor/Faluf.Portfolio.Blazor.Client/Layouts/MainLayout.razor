@@ -5,6 +5,7 @@
 @inject IStringLocalizer<MainLayout> Localizer
 @inject IAuthService AuthService
 @inject NavigationManager NavigationManager
+@inject IConfiguration Configuration
 
 <SerilogErrorBoundary @ref="errorBoundary">
 	<ChildContent>
@@ -30,12 +31,14 @@
 	private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
 
 	private ErrorBoundary errorBoundary = null!;
-	private PeriodicTimer timer = new(TimeSpan.FromSeconds(15));
+	private PeriodicTimer? timer;
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if (firstRender)
 		{
+			timer ??= new PeriodicTimer(TimeSpan.FromMinutes(long.Parse(Configuration["RevalidationIntervalInMinutes"]!)));
+
 			while (await timer.WaitForNextTickAsync() && (await AuthenticationStateTask).User.Identity is { IsAuthenticated: true })
 			{
 				Result<TokenDTO> result = await AuthService.RefreshTokensAsync();
@@ -54,6 +57,6 @@
 
 	public void Dispose()
 	{
-		timer.Dispose();
+		timer?.Dispose();
 	}
 }
