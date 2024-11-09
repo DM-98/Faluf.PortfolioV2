@@ -1,6 +1,10 @@
 ﻿@inherits LayoutComponentBase
 
+@implements IDisposable
+
 @inject IStringLocalizer<MainLayout> Localizer
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
 
 <SerilogErrorBoundary @ref="errorBoundary">
 	<ChildContent>
@@ -22,5 +26,34 @@
 </SerilogErrorBoundary>
 
 @code {
+	[CascadingParameter]
+	private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+
 	private ErrorBoundary errorBoundary = null!;
+	private PeriodicTimer timer = new(TimeSpan.FromSeconds(15));
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+			while (await timer.WaitForNextTickAsync() && (await AuthenticationStateTask).User.Identity is { IsAuthenticated: true })
+			{
+				Result<TokenDTO> result = await AuthService.RefreshTokensAsync();
+
+				if (!result.IsSuccess)
+				{
+					timer.Dispose();
+
+					NavigationManager.Refresh(forceReload: true);
+				}
+
+				await InvokeAsync(StateHasChanged);
+			}
+		}
+	}
+
+	public void Dispose()
+	{
+		timer.Dispose();
+	}
 }

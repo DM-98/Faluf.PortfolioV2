@@ -52,7 +52,8 @@ public static class ServiceCollectionHelper
     public static void AddPortfolioAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddCascadingAuthenticationState();
-        services.AddScoped<AuthenticationStateProvider, JWTAuthenticationStateProvider>();
+        services.AddScoped<JWTAuthenticationStateProvider>();
+        services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<JWTAuthenticationStateProvider>());
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

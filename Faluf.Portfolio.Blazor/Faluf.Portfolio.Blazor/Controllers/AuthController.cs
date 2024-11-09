@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,7 +6,7 @@ namespace Faluf.Portfolio.Blazor.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public sealed class AuthController(IDataProtectionProvider dataProtectionProvider, IAuthService authService) : ControllerBase
+public sealed class AuthController(JWTAuthenticationStateProvider jwtAuthenticationStateProvider, IDataProtectionProvider dataProtectionProvider, IAuthService authService) : ControllerBase
 {
 	private readonly IDataProtector dataProtector = dataProtectionProvider.CreateProtector(Globals.AuthProtector);
 
@@ -33,35 +33,16 @@ public sealed class AuthController(IDataProtectionProvider dataProtectionProvide
     }
 
     [HttpGet("RefreshTokens")]
-    public async Task<ActionResult<Result<TokenDTO>>> RefreshTokensAsync(CancellationToken cancellationToken = default)
+    public async Task<ActionResult<Result<TokenDTO>>> RefreshTokensAsync()
     {
-		string? accessToken = Request.Headers.Authorization.ToString().Replace("Bearer ", string.Empty);
-		accessToken ??= Request.Cookies[Globals.AccessToken] is { } encryptedAccessToken ? dataProtector.Unprotect(encryptedAccessToken) : null;
+		AuthenticationState authState = await jwtAuthenticationStateProvider.GetAuthenticationStateAsync();
 
-		if (accessToken is null)
+		if (authState.User.Identity is not { IsAuthenticated: true })
 		{
 			return Unauthorized();
 		}
 
-		Result<TokenDTO> result = await authService.RefreshTokensAsync(new(accessToken, new JwtSecurityTokenHandler().ReadJwtToken(accessToken).Claims.First(x => x.Type is JwtRegisteredClaimNames.Jti).Value), cancellationToken);
-
-		if (result.IsSuccess)
-		{
-            bool rememberMe = Request.Cookies[Globals.IsPersistent] is { } rememberMeString && Convert.ToBoolean(dataProtector.Unprotect(rememberMeString));
-
-            CookieOptions cookieOptions = new()
-			{
-				HttpOnly = true,
-				Secure = true,
-				SameSite = SameSiteMode.Lax,
-				Expires = rememberMe ? DateTime.UtcNow.AddYears(1) : null
-			};
-
-			Response.Cookies.Append(Globals.AccessToken, dataProtector.Protect(result.Content.AccessToken), cookieOptions);
-            Response.Cookies.Append(Globals.IsPersistent, dataProtector.Protect(rememberMe.ToString()), cookieOptions);
-        }
-
-		return StatusCode((int)result.StatusCode, result);
+		return Ok();
     }
 
     [HttpPost("Logout")]

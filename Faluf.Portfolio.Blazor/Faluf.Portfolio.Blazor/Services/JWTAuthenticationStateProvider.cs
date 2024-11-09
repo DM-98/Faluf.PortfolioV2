@@ -33,6 +33,9 @@ public sealed class JWTAuthenticationStateProvider(IDataProtectionProvider dataP
 
 		if (!refreshTokensResult.IsSuccess)
 		{
+			httpContext.Response.Cookies.Delete(Globals.AccessToken);
+			httpContext.Response.Cookies.Delete(Globals.IsPersistent);
+
 			return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
 		}
 
