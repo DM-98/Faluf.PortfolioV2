@@ -46,7 +46,9 @@ public class Result<T>
 
     public static Result<TValue> BadRequest<TValue>(string errorMessage) where TValue : T => new(false, errorMessage: errorMessage, statusCode: HttpStatusCode.BadRequest);
 
-    public static Result<TValue> InternalServerError<TValue>(string errorMessage, Exception ex) where TValue : T => new(false, errorMessage: errorMessage, exception: ex, statusCode: HttpStatusCode.InternalServerError);
+	public static Result<TValue> Conflict<TValue>(string errorMessage) where TValue : T => new(false, errorMessage: errorMessage, statusCode: HttpStatusCode.Conflict);
+
+	public static Result<TValue> InternalServerError<TValue>(string errorMessage, Exception ex) where TValue : T => new(false, errorMessage: errorMessage, exception: ex, statusCode: HttpStatusCode.InternalServerError);
 }
 
 public sealed class Result(bool isSuccess, string? errorMessage = null, Exception? exception = null, object? content = default, HttpStatusCode statusCode = HttpStatusCode.OK, int recordCount = 0)

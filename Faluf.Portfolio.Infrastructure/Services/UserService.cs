@@ -11,14 +11,21 @@ public sealed class UserService(ILogger<UserService> logger, IStringLocalizer<Us
     {
         try
         {
-            bool userExists = await userRepository.UserExistsAsync(registerInputModel.Email, registerInputModel.Username, cancellationToken).ConfigureAwait(false);
+            bool emailExists = await userRepository.EmailExistsAsync(registerInputModel.Email, cancellationToken).ConfigureAwait(false);
 
-            if (userExists)
+            if (emailExists)
             {
-                return Result.BadRequest<User>(stringLocalizer["UserAlreadyExists"]);
+                return Result.Conflict<User>(stringLocalizer["EmailAlreadyExists"]);
             }
 
-            User user = registerInputModel.ToUser();
+            bool usernameExists = await userRepository.UsernameExistsAsync(registerInputModel.Username, cancellationToken).ConfigureAwait(false);
+
+			if (usernameExists)
+			{
+				return Result.Conflict<User>(stringLocalizer["UsernameAlreadyExists"]);
+			}
+
+			User user = registerInputModel.ToUser();
             user.HashedPassword = BCryptNext.HashPassword(registerInputModel.Password);
 
             user = await userRepository.UpsertAsync(user, cancellationToken).ConfigureAwait(false);

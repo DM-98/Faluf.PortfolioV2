@@ -11,35 +11,35 @@
 	<!-- Username -->
 	<div class="mb-3">
 		<label for="firstName" class="form-label">@Localizer["Username"]:</label>
-		<InputText id="firstName" @bind-Value="@RegisterInputModel.Username" />
+		<InputText id="firstName" @bind-Value="@RegisterInputModel.Username" class="form-control" />
 		<ValidationMessage For="@(() => RegisterInputModel.Username)" />
 	</div>
 
 	<!-- Email -->
 	<div class="mb-3">
 		<label for="email" class="form-label">@Localizer["Email"]:</label>
-		<InputText id="email" @bind-Value="@RegisterInputModel.Email" />
+		<InputText id="email" @bind-Value="@RegisterInputModel.Email" class="form-control" />
 		<ValidationMessage For="@(() => RegisterInputModel.Email)" />
 	</div>
 
 	<!-- Password -->
 	<div class="mb-3">
 		<label for="password" class="form-label">@Localizer["Password"]:</label>
-		<InputText id="password" @bind-Value="@RegisterInputModel.Password" />
+		<InputText id="password" @bind-Value="@RegisterInputModel.Password" class="form-control" />
 		<ValidationMessage For="@(() => RegisterInputModel.Password)" />
 	</div>
 
 	<!-- Confirm password -->
 	<div class="mb-3">
 		<label for="confirmPassword" class="form-label">@Localizer["ConfirmPassword"]:</label>
-		<InputText id="confirmPassword" @bind-Value="@RegisterInputModel.ConfirmPassword" />
+		<InputText id="confirmPassword" @bind-Value="@RegisterInputModel.ConfirmPassword" class="form-control" />
 		<ValidationMessage For="@(() => RegisterInputModel.ConfirmPassword)" />
 	</div>
 
 	<!-- Terms Accepted -->
 	<div class="form-check mb-3">
 		<InputCheckbox id="isTermsAccepted" class="form-check-input" @bind-Value="@RegisterInputModel.IsTermsAccepted" />
-		<label for="isTermsAccepted" class="form-check-label">@Localizer["AcceptTerms"]:</label>
+		<label for="isTermsAccepted" class="form-check-label">@Localizer["AcceptTerms"]</label>
 		<ValidationMessage For="@(() => RegisterInputModel.IsTermsAccepted)" />
 	</div>
 
