@@ -1,4 +1,3 @@
-using System.Reflection;
 using Faluf.Portfolio.Blazor.Middlewares;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +5,7 @@ using Serilog;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorComponents().AddInteractiveServerComponents().AddInteractiveWebAssemblyComponents().AddAuthenticationStateSerialization(options => options.SerializeAllClaims = true);
+builder.Services.AddRazorComponents().AddInteractiveServerComponents().AddAuthenticationStateSerialization(options => options.SerializeAllClaims = true);
 builder.Services.AddControllers();
 builder.Services.AddDataProtection().PersistKeysToDbContext<PortfolioDbContext>();
 
@@ -26,7 +25,6 @@ WebApplication app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseWebAssemblyDebugging();
     app.UseDeveloperExceptionPage();
     app.UseMigrationsEndPoint();
     app.MapOpenApi();
@@ -54,7 +52,7 @@ app.UseRequestLocalization(new RequestLocalizationOptions().SetDefaultCulture(su
 app.UseCookieAuthMiddleware();
 
 app.MapStaticAssets();
-app.MapRazorComponents<App>().AddInteractiveServerRenderMode().AddInteractiveWebAssemblyRenderMode().AddAdditionalAssemblies(Assembly.Load("Faluf.Portfolio.Blazor.Client")).AllowAnonymous();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode().AllowAnonymous();
 app.MapControllers();
 
 app.Run();

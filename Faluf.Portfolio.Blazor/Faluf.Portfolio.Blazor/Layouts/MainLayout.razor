@@ -13,11 +13,7 @@
 	</div>
 
 	<main>
-		<div class="top-row d-flex justify-content-end justify-content-lg-between px-4">
-			<div>
-				<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-			</div>
-
+		<div class="top-row px-4">
 			<div>
 				<AuthorizeView>
 					<span class="me-2"><b>RefreshToken</b>: @context.User.Claims.FirstOrDefault(x => x.Type is "jti")?.Value | </span>

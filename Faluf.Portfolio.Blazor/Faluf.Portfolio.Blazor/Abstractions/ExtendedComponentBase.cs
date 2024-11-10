@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 
-namespace Faluf.Portfolio.Blazor.Client.Abstractions;
+namespace Faluf.Portfolio.Blazor.Abstractions;
 
 public abstract class ExtendedComponentBase : ComponentBase
 {

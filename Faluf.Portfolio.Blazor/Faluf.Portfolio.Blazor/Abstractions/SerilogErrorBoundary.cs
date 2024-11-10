@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.Web;
 
-namespace Faluf.Portfolio.Blazor.Client.Abstractions;
+namespace Faluf.Portfolio.Blazor.Abstractions;
 
 public sealed class SerilogErrorBoundary(ILogger<SerilogErrorBoundary> logger) : ErrorBoundary
 {
