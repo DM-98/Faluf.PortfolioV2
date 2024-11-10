@@ -9,8 +9,6 @@ public sealed class PortfolioDbContext(DbContextOptions<PortfolioDbContext> opti
 {
     public DbSet<AuthState> AuthStates => Set<AuthState>();
 
-    public DbSet<Post> Posts => Set<Post>();
-
     public DbSet<User> Users => Set<User>();
 
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();

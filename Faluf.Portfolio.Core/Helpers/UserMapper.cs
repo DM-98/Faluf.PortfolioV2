@@ -9,7 +9,7 @@ public static class UserMapper
             Username = registerInputModel.Username,
             Email = registerInputModel.Email,
             Roles = ["User"],
-            TermsAndPrivacyPolicyAcceptedAt = DateTimeOffset.UtcNow,
+            TermsAcceptedAt = DateTimeOffset.UtcNow,
         };
     }
 }
