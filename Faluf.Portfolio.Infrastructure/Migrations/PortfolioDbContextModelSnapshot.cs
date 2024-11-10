@@ -65,42 +65,6 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
                     b.ToTable("AuthStates");
                 });
 
-            modelBuilder.Entity("Faluf.Portfolio.Core.Domain.Post", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("AuthorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("PublishedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AuthorId");
-
-                    b.ToTable("Posts");
-                });
-
             modelBuilder.Entity("Faluf.Portfolio.Core.Domain.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -128,7 +92,7 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset?>("TermsAndPrivacyPolicyAcceptedAt")
+                    b.Property<DateTimeOffset?>("TermsAcceptedAt")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -171,22 +135,6 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Faluf.Portfolio.Core.Domain.Post", b =>
-                {
-                    b.HasOne("Faluf.Portfolio.Core.Domain.User", "Author")
-                        .WithMany("Posts")
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Author");
-                });
-
-            modelBuilder.Entity("Faluf.Portfolio.Core.Domain.User", b =>
-                {
-                    b.Navigation("Posts");
                 });
 #pragma warning restore 612, 618
         }
