@@ -1,6 +1,4 @@
-﻿using System.Collections.Concurrent;
-
-namespace Faluf.Portfolio.Core.Constants;
+﻿namespace Faluf.Portfolio.Core.Constants;
 
 public static class Globals
 {
