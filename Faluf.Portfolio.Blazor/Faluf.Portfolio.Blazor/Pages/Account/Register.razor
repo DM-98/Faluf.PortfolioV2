@@ -3,6 +3,8 @@
 @inject NavigationManager NavigationManager
 @inject IUserService UserService
 
+<PageTitle>@Localizer["Register"]</PageTitle>
+
 <h3>@Localizer["Register"]</h3>
 
 <EditForm Model="@RegisterInputModel" OnValidSubmit="RegisterAsync" FormName="RegisterForm">

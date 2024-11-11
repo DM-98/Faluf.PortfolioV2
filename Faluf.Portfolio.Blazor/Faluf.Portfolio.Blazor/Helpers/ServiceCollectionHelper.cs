@@ -1,9 +1,9 @@
 ﻿using System.Reflection;
 using System.Text;
 using FluentValidation;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -85,8 +85,16 @@ public static class ServiceCollectionHelper
                     return Task.CompletedTask;
                 }
             };
-        });
-    }
+        })
+        .AddCookie(options =>
+		{
+			options.Cookie.HttpOnly = true;
+			options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+			options.Cookie.SameSite = SameSiteMode.Lax;
+			options.Cookie.IsEssential = true;
+			options.Cookie.Name = Globals.AccessToken;
+		});
+	}
 
     public static void AddPortfolioRepositories(this IServiceCollection services)
     {

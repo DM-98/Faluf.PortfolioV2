@@ -13,7 +13,7 @@ namespace Faluf.Portfolio.Infrastructure.Services;
 public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepository authStateRepository, IUserRepository userRepository, IStringLocalizer<AuthService> stringLocalizer, IConfiguration configuration) 
     : IAuthService
 {
-    public static ConcurrentQueue<(TokenDTO TokenDTO, bool IsPersisted)> LoginQueue { get; private set; } = [];
+    public static ConcurrentQueue<(TokenDTO TokenDTO, bool IsPersisted)> CookieLoginQueue { get; private set; } = [];
 
     private readonly string secret = configuration["JWT:Secret"]!;
     private readonly string issuer = configuration["JWT:Issuer"]!;
@@ -62,7 +62,7 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
             authState.AccessFailedCount = 0;
             authState.LockoutEndAt = null;
             authState.RefreshToken = Guid.NewGuid().ToString();
-            authState.RefreshTokentExpiresAt = DateTimeOffset.UtcNow.AddDays(refreshTokenExpiryInDays);
+            authState.RefreshTokenExpiresAt = DateTimeOffset.UtcNow.AddDays(refreshTokenExpiryInDays);
 
             await authStateRepository.UpsertAsync(authState, cancellationToken).ConfigureAwait(false);
 
@@ -80,7 +80,7 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
 
             TokenDTO tokenDTO = new(accessToken, authState.RefreshToken);
 
-            LoginQueue.Enqueue((tokenDTO, loginInputModel.IsPersistent));
+            CookieLoginQueue.Enqueue((tokenDTO, loginInputModel.IsPersistent));
 
             return Result.Ok(tokenDTO);
         }
@@ -92,13 +92,8 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
         }
     }
 
-    public async Task<Result<TokenDTO>> RefreshTokensAsync(TokenDTO? tokenDTO = null, CancellationToken cancellationToken = default)
+    public async Task<Result<TokenDTO>> RefreshTokensAsync(TokenDTO tokenDTO, CancellationToken cancellationToken = default)
     {
-		if (tokenDTO is null)
-		{
-			return Result.BadRequest<TokenDTO>(stringLocalizer["TokenRequired"]);
-		}
-
 		try
         {
             IEnumerable<Claim>? claims = await ValidateAccessTokenAsync(tokenDTO.AccessToken).ConfigureAwait(false);
@@ -110,7 +105,7 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
 
             AuthState? authState = await authStateRepository.GetByRefreshTokenAsync(claims.First(x => x.Type is JwtRegisteredClaimNames.Jti).Value, cancellationToken).ConfigureAwait(false);
 
-            if (authState is null or { RefreshToken: null } || authState.RefreshTokentExpiresAt < DateTimeOffset.UtcNow)
+            if (authState is null or { RefreshToken: null } || authState.RefreshTokenExpiresAt < DateTimeOffset.UtcNow)
             {
                 return Result.Unauthorized<TokenDTO>(stringLocalizer["Unauthorized"]);
             }
@@ -125,7 +120,7 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
             }
 
             authState.RefreshToken = Guid.NewGuid().ToString();
-            authState.RefreshTokentExpiresAt = DateTimeOffset.UtcNow.AddDays(refreshTokenExpiryInDays);
+            authState.RefreshTokenExpiresAt = DateTimeOffset.UtcNow.AddDays(refreshTokenExpiryInDays);
 
             await authStateRepository.UpsertAsync(authState, cancellationToken).ConfigureAwait(false);
 

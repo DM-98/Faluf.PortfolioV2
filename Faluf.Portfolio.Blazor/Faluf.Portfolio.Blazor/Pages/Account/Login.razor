@@ -3,6 +3,8 @@
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 
+<PageTitle>@Localizer["Login"]</PageTitle>
+
 <h3>@Localizer["Login"]</h3>
 
 <EditForm Model="@LoginInputModel" OnValidSubmit="LoginAsync" FormName="LoginForm">

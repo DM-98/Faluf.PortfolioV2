@@ -49,7 +49,7 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
                     b.Property<string>("RefreshToken")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset?>("RefreshTokentExpiresAt")
+                    b.Property<DateTimeOffset?>("RefreshTokenExpiresAt")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<DateTime?>("UpdatedAt")

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Faluf.Portfolio.Infrastructure.Migrations
 {
     [DbContext(typeof(PortfolioDbContext))]
-    [Migration("20241110182021_InitialCreate")]
+    [Migration("20241110220043_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -52,7 +52,7 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
                     b.Property<string>("RefreshToken")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset?>("RefreshTokentExpiresAt")
+                    b.Property<DateTimeOffset?>("RefreshTokenExpiresAt")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<DateTime?>("UpdatedAt")

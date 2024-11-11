@@ -52,7 +52,7 @@ namespace Faluf.Portfolio.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RefreshToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RefreshTokentExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    RefreshTokenExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     AccessFailedCount = table.Column<int>(type: "int", nullable: false),
                     IsPersistent = table.Column<bool>(type: "bit", nullable: false),
                     LockoutEndAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),

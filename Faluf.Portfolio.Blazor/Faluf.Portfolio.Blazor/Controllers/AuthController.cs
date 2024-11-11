@@ -1,12 +1,11 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.DataProtection;
+﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Faluf.Portfolio.Blazor.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public sealed class AuthController(JWTAuthenticationStateProvider jwtAuthenticationStateProvider, IDataProtectionProvider dataProtectionProvider, IAuthService authService) : ControllerBase
+public sealed class AuthController(IDataProtectionProvider dataProtectionProvider, IAuthService authService) : ControllerBase
 {
 	private readonly IDataProtector dataProtector = dataProtectionProvider.CreateProtector(Globals.AuthProtector);
 
@@ -22,7 +21,8 @@ public sealed class AuthController(JWTAuthenticationStateProvider jwtAuthenticat
 				HttpOnly = true,
 				Secure = true,
 				SameSite = SameSiteMode.Lax,
-				Expires = loginInputModel.IsPersistent ? DateTime.UtcNow.AddMonths(1) : null
+				Expires = loginInputModel.IsPersistent ? DateTime.UtcNow.AddYears(1) : null,
+				IsEssential = true
 			};
 
 			Response.Cookies.Append(Globals.AccessToken, dataProtector.Protect(result.Content.AccessToken), cookieOptions);
@@ -30,19 +30,6 @@ public sealed class AuthController(JWTAuthenticationStateProvider jwtAuthenticat
 		}
 
 		return StatusCode((int)result.StatusCode, result);
-    }
-
-    [HttpGet("RefreshTokens")]
-    public async Task<ActionResult<Result<TokenDTO>>> RefreshTokensAsync()
-    {
-		AuthenticationState authState = await jwtAuthenticationStateProvider.GetAuthenticationStateAsync();
-
-		if (authState.User.Identity is not { IsAuthenticated: true })
-		{
-			return Unauthorized();
-		}
-
-		return Ok();
     }
 
     [HttpPost("Logout")]

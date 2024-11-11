@@ -1,11 +1,6 @@
 ﻿@inherits LayoutComponentBase
 
-@implements IDisposable
-
 @inject IStringLocalizer<MainLayout> Localizer
-@inject IAuthService AuthService
-@inject NavigationManager NavigationManager
-@inject IConfiguration Configuration
 
 <div class="page">
 	<div class="sidebar sticky-top">
@@ -14,15 +9,13 @@
 
 	<main>
 		<div class="top-row px-4">
-			<div>
-				<AuthorizeView>
-					<span class="me-2"><b>RefreshToken</b>: @context.User.Claims.FirstOrDefault(x => x.Type is "jti")?.Value | </span>
-				</AuthorizeView>
+			<AuthorizeView>
+				<span class="me-2"><b>RefreshToken</b>: @context.User.Claims.FirstOrDefault(x => x.Type is "jti")?.Value | </span>
+			</AuthorizeView>
 
-				<span class="me-2"><b>Memory usage</b>: @((GC.GetTotalMemory(false) / 1024.0 / 1024.0).ToString("F2")) MB | </span>
+			<span class="me-2"><b>Memory usage</b>: @((GC.GetTotalMemory(false) / 1024.0 / 1024.0).ToString("F2")) MB | </span>
 
-				<span class="me-2"><b>Current RenderMode</b>: @RendererInfo.Name @(RendererInfo.IsInteractive ? new MarkupString("""(<span class="text-success">Interactive</span>)""") : new MarkupString("""(<span class="text-danger">Non-interactive</span>)"""))</span>
-			</div>
+			<span class="me-2"><b>Current RenderMode</b>: @RendererInfo.Name @(RendererInfo.IsInteractive ? new MarkupString("""(<span class="text-success">Interactive</span>)""") : new MarkupString("""(<span class="text-danger">Non-interactive</span>)"""))</span>
 		</div>
 
 		<article class="content p-2 p-lg-3">
@@ -46,31 +39,5 @@
 </div>
 
 @code {
-	[CascadingParameter]
-	private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
-
 	private ErrorBoundary errorBoundary = null!;
-	private PeriodicTimer? revalidationTimer;
-
-	protected override async Task OnAfterRenderAsync(bool firstRender)
-	{
-		if (firstRender)
-		{
-			revalidationTimer ??= new(TimeSpan.FromMinutes(10));
-
-			while (await revalidationTimer.WaitForNextTickAsync() && (await AuthenticationStateTask).User.Identity is { IsAuthenticated: true })
-			{
-				Result<TokenDTO> result = await AuthService.RefreshTokensAsync();
-
-				if (!result.IsSuccess)
-				{
-					revalidationTimer.Dispose();
-
-					NavigationManager.Refresh(forceReload: true);
-				}
-			}
-		}
-	}
-
-	public void Dispose() => revalidationTimer?.Dispose();
 }

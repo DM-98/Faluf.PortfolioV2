@@ -9,7 +9,7 @@ public sealed class AuthState : BaseEntity
 
     public string? RefreshToken { get; set; }
 
-    public DateTimeOffset? RefreshTokentExpiresAt { get; set; }
+    public DateTimeOffset? RefreshTokenExpiresAt { get; set; }
 
     public int AccessFailedCount { get; set; }
 

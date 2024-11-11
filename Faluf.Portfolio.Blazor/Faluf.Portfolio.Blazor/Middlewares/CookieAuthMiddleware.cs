@@ -11,7 +11,7 @@ public sealed class CookieAuthMiddleware(RequestDelegate next, IDataProtectionPr
     {
         if (context.Request.Path.StartsWithSegments($"/{Globals.ProcessLogin}") && context.Request.Query.TryGetValue(Globals.RefreshToken, out StringValues refreshToken))
         {
-            if (AuthService.LoginQueue.TryDequeue(out (TokenDTO TokenDTO, bool IsPersisted) loginQueue))
+            if (AuthService.CookieLoginQueue.TryDequeue(out (TokenDTO TokenDTO, bool IsPersisted) loginQueue))
             {
                 if (loginQueue.TokenDTO.RefreshToken == refreshToken)
                 {
