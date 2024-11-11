@@ -1,4 +1,5 @@
 ﻿global using Faluf.Portfolio.Core.Abstractions.Interfaces;
+global using Faluf.Portfolio.Core.Constants;
 global using Faluf.Portfolio.Core.Domain;
 global using Faluf.Portfolio.Core.DTOs.Inputs;
 global using Faluf.Portfolio.Core.DTOs.Outputs;

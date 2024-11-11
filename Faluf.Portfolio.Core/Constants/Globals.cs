@@ -12,7 +12,11 @@ public static class Globals
 
 	public const string JWTAuthType = nameof(JWTAuthType);
 
-	public const string ProcessLogin = nameof(ProcessLogin);
+	public const string ProcessCookies = nameof(ProcessCookies);
 
 	public const string ReturnUrl = nameof(ReturnUrl);
+ 
+    public const string APIClient = nameof(APIClient);
+
+	public const string ApplicationJson = "application/json";
 }

@@ -1,73 +1,80 @@
 ﻿@page "/account/login"
+@using System.Text.Json
+@using System.Text
 
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
+@inject JWTAuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory HttpClientFactory
 
 <PageTitle>@Localizer["Login"]</PageTitle>
 
 <h3>@Localizer["Login"]</h3>
 
 <EditForm Model="@LoginInputModel" OnValidSubmit="LoginAsync" FormName="LoginForm">
-	<FluentValidationValidator />
+    <FluentValidationValidator />
 
-	<!-- Email -->
-	<div class="mb-3">
-		<label for="email" class="form-label">@Localizer["Email"]:</label>
-		<InputText id="email" @bind-Value="@LoginInputModel.Email" class="form-control" />
-		<ValidationMessage For="@(() => LoginInputModel.Email)" class="text-danger" />
-	</div>
+    <!-- Email -->
+    <div class="mb-3">
+        <label for="email" class="form-label">@Localizer["Email"]:</label>
+        <InputText id="email" @bind-Value="@LoginInputModel.Email" class="form-control" />
+        <ValidationMessage For="@(() => LoginInputModel.Email)" class="text-danger" />
+    </div>
 
-	<!-- Password -->
-	<div class="mb-3">
-		<label for="password" class="form-label">@Localizer["Password"]:</label>
-		<InputText id="password" type="password" @bind-Value="@LoginInputModel.Password" class="form-control" />
-		<ValidationMessage For="@(() => LoginInputModel.Password)" class="text-danger" />
-	</div>
+    <!-- Password -->
+    <div class="mb-3">
+        <label for="password" class="form-label">@Localizer["Password"]:</label>
+        <InputText id="password" type="password" @bind-Value="@LoginInputModel.Password" class="form-control" />
+        <ValidationMessage For="@(() => LoginInputModel.Password)" class="text-danger" />
+    </div>
 
-	<!-- Stay logged in -->
-	<div class="form-check mb-3">
-		<InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="@LoginInputModel.IsPersistent" />
-		<label class="form-check-label" for="rememberMe">@Localizer["StayLoggedIn"]</label>
-	</div>
+    <!-- Stay logged in -->
+    <div class="form-check mb-3">
+        <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="@LoginInputModel.IsPersistent" />
+        <label class="form-check-label" for="rememberMe">@Localizer["StayLoggedIn"]</label>
+    </div>
 
-	<!-- Login -->
-	<div class="mb-3">
-		<button type="submit" class="btn btn-primary btn-block">@Localizer["Login"]</button>
-	</div>
+    <!-- Login -->
+    <div class="mb-3">
+        <button type="submit" class="btn btn-primary btn-block">@Localizer["Login"]</button>
+    </div>
 
-	@if (!string.IsNullOrWhiteSpace(ErrorMessage))
-	{
-		<div class="alert alert-danger mt-3" role="alert">
-			@((MarkupString)ErrorMessage)
-		</div>
-	}
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger mt-3" role="alert">
+            @((MarkupString)ErrorMessage)
+        </div>
+    }
 </EditForm>
 
 @code {
-	[Parameter, SupplyParameterFromQuery]
-	public string? ReturnUrl { get; set; }
+    [Parameter, SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
 
-	[SupplyParameterFromForm(FormName = "LoginForm")]
-	private LoginInputModel LoginInputModel { get; set; } = new() 
-	{ 
-		Email = "test@test.com", 
-		Password = "Test123!", 
-		ClientType = ClientType.Web 
-	};
+    [SupplyParameterFromForm(FormName = "LoginForm")]
+    private LoginInputModel LoginInputModel { get; set; } = new()
+    {
+        Email = "test@test.com",
+        Password = "Test123!",
+        ClientType = ClientType.Web
+    };
 
-	private async Task LoginAsync()
-	{
-		Result<TokenDTO> loginResult = await AuthService.LoginAsync(LoginInputModel, CancellationToken);
+    private async Task LoginAsync()
+    {
+        HttpResponseMessage httpResponseMessage = await HttpClientFactory.CreateClient(Globals.APIClient).PostAsync("Auth/Login", new StringContent(JsonSerializer.Serialize(LoginInputModel), Encoding.UTF8, Globals.ApplicationJson), CancellationToken);
+        Result<TokenDTO> loginResult = await httpResponseMessage.Content.ReadFromJsonAsync<Result<TokenDTO>>(CancellationToken) ?? new();
 
-		if (!loginResult.IsSuccess)
-		{
-			SetErrorMessage(loginResult);
+        if (!loginResult.IsSuccess)
+        {
+            SetErrorMessage(loginResult);
 
-			return;
-		}
+            return;
+        }
 
-		string processLoginUrl = $"/{Globals.ProcessLogin}?{Globals.RefreshToken}={loginResult.Content.RefreshToken}&{Globals.ReturnUrl}={ReturnUrl}";
+        CookieLoginHelper.CookieLoginQueue.Enqueue((loginResult.Content, LoginInputModel.IsPersistent));
 
-		NavigationManager.NavigateTo(processLoginUrl, forceLoad: true);
-	}
+        AuthenticationStateProvider.NotifyAuthenticationState(loginResult.Content);
+
+        NavigationManager.NavigateTo(!string.IsNullOrWhiteSpace(ReturnUrl) ? ReturnUrl : "/");
+    }
 }

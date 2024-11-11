@@ -1,15 +1,15 @@
-﻿using System.Reflection;
-using System.Text;
-using FluentValidation;
+﻿using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.MSSqlServer;
+using System.Net;
+using System.Reflection;
+using System.Text;
 
 namespace Faluf.Portfolio.Blazor.Helpers;
 
@@ -33,8 +33,11 @@ public static class ServiceCollectionHelper
         // Localization
         builder.Services.AddLocalization();
 
-        // HttpContextAccessor
-        builder.Services.AddHttpContextAccessor();
+		// AddHttpClient
+		CookieContainer cookieContainer = new();
+		HttpClientHandler httpClientHandler = new() { CookieContainer = cookieContainer };
+		builder.Services.AddSingleton(cookieContainer);
+		builder.Services.AddHttpClient(Globals.APIClient, client => client.BaseAddress = new Uri(builder.Configuration["API:BaseURL"]!)).ConfigurePrimaryHttpMessageHandler(() => httpClientHandler);
 
         // Validations
         builder.Services.AddValidatorsFromAssembly(Assembly.Load("Faluf.Portfolio.Core"));
@@ -59,40 +62,31 @@ public static class ServiceCollectionHelper
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         }).AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateLifetime = false,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = configuration["JWT:Issuer"]!,
-                ValidAudience = configuration["JWT:Audience"]!,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"]!)),
-                ClockSkew = TimeSpan.Zero
-            };
-
-            options.Events = new JwtBearerEvents
-            {
-                OnMessageReceived = context =>
-                {
-                    string? accessToken = context.Request.Cookies[Globals.AccessToken];
-
-                    if (!string.IsNullOrWhiteSpace(accessToken))
-                    {
-                        IDataProtector dataProtector = context.HttpContext.RequestServices.GetRequiredService<IDataProtectionProvider>().CreateProtector(Globals.AuthProtector);
-                        context.Token = dataProtector.Unprotect(accessToken);
-                    }
-
-                    return Task.CompletedTask;
-                }
-            };
-        })
-        .AddCookie(options =>
 		{
-			options.Cookie.HttpOnly = true;
-			options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-			options.Cookie.SameSite = SameSiteMode.Lax;
-			options.Cookie.IsEssential = true;
-			options.Cookie.Name = Globals.AccessToken;
+			options.TokenValidationParameters = new TokenValidationParameters
+			{
+				ValidateLifetime = false,
+				ValidateIssuerSigningKey = true,
+				ValidIssuer = configuration["JWT:Issuer"]!,
+				ValidAudience = configuration["JWT:Audience"]!,
+				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"]!)),
+				ClockSkew = TimeSpan.Zero
+			};
+
+			options.Events = new JwtBearerEvents
+			{
+				OnMessageReceived = context =>
+				{
+					if (context.Request.Cookies.TryGetValue(Globals.AccessToken, out string? accessToken))
+					{
+						IDataProtector dataProtector = context.HttpContext.RequestServices.GetRequiredService<IDataProtectionProvider>().CreateProtector(Globals.AuthProtector);
+
+						context.Token = dataProtector.Unprotect(accessToken);
+					}
+
+					return Task.CompletedTask;
+				}
+			};
 		});
 	}
 
@@ -104,7 +98,8 @@ public static class ServiceCollectionHelper
 
     public static void AddPortfolioServices(this IServiceCollection services)
     {
+        services.AddSingleton<ITokenProvider, TokenProvider>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
-    }
+	}
 }

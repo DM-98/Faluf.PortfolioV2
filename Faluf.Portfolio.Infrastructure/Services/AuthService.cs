@@ -1,11 +1,11 @@
-﻿using System.Collections.Concurrent;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using System.Collections.Concurrent;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using BCryptNext = BCrypt.Net.BCrypt;
 
 namespace Faluf.Portfolio.Infrastructure.Services;
@@ -13,16 +13,14 @@ namespace Faluf.Portfolio.Infrastructure.Services;
 public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepository authStateRepository, IUserRepository userRepository, IStringLocalizer<AuthService> stringLocalizer, IConfiguration configuration) 
     : IAuthService
 {
-    public static ConcurrentQueue<(TokenDTO TokenDTO, bool IsPersisted)> CookieLoginQueue { get; private set; } = [];
-
     private readonly string secret = configuration["JWT:Secret"]!;
     private readonly string issuer = configuration["JWT:Issuer"]!;
     private readonly string audience = configuration["JWT:Audience"]!;
-    private readonly int accessTokenExpiryInMinutes = int.Parse(configuration["JWT:AccessTokenExpiryInMinutes"]!);
+    private readonly int accessTokenExpiryInSeconds = int.Parse(configuration["JWT:AccessTokenExpiryInSeconds"]!);
     private readonly int refreshTokenExpiryInDays = int.Parse(configuration["JWT:RefreshTokenExpiryInDays"]!);
     private readonly int maxFailedLoginCount = int.Parse(configuration["MaxFailedLoginCount"]!);
 
-    public async Task<Result<TokenDTO>> LoginAsync(LoginInputModel loginInputModel, CancellationToken cancellationToken = default)
+	public async Task<Result<TokenDTO>> LoginAsync(LoginInputModel loginInputModel, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -76,13 +74,7 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
 
             user.Roles.ForEach(role => claims.Add(new Claim(ClaimTypes.Role, role)));
 
-            string accessToken = GenerateAccessToken(claims);
-
-            TokenDTO tokenDTO = new(accessToken, authState.RefreshToken);
-
-            CookieLoginQueue.Enqueue((tokenDTO, loginInputModel.IsPersistent));
-
-            return Result.Ok(tokenDTO);
+			return Result.Ok(new TokenDTO(GenerateAccessToken(claims), authState.RefreshToken));
         }
         catch (Exception ex)
         {
@@ -100,14 +92,14 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
 
             if (claims is null)
             {
-                return Result.Unauthorized<TokenDTO>(stringLocalizer["Unauthorized"]);
+                return Result.Unauthorized<TokenDTO>(stringLocalizer["Unauthorized1"]);
             }
 
             AuthState? authState = await authStateRepository.GetByRefreshTokenAsync(claims.First(x => x.Type is JwtRegisteredClaimNames.Jti).Value, cancellationToken).ConfigureAwait(false);
 
             if (authState is null or { RefreshToken: null } || authState.RefreshTokenExpiresAt < DateTimeOffset.UtcNow)
             {
-                return Result.Unauthorized<TokenDTO>(stringLocalizer["Unauthorized"]);
+                return Result.Unauthorized<TokenDTO>(stringLocalizer["Unauthorized2"]);
             }
 
             if (authState.LockoutEndAt > DateTimeOffset.UtcNow)
@@ -130,7 +122,7 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
                 new(JwtRegisteredClaimNames.Jti, authState.RefreshToken)
             ];
 
-            return Result.Ok(new TokenDTO(GenerateAccessToken(newClaims), authState.RefreshToken));
+			return Result.Ok(new TokenDTO(GenerateAccessToken(newClaims), authState.RefreshToken));
         }
         catch (Exception ex)
         {
@@ -148,7 +140,7 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
             issuer: issuer, 
             audience: claims.Any(x => x.Type is JwtRegisteredClaimNames.Aud) ? null : audience, 
             claims: claims, 
-            expires: DateTime.UtcNow.AddMinutes(accessTokenExpiryInMinutes), 
+            expires: DateTime.UtcNow.AddSeconds(accessTokenExpiryInSeconds), 
             signingCredentials: credentials
         );
 

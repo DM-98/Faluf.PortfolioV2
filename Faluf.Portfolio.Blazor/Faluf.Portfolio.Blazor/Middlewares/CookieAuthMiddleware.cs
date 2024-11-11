@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.Primitives;
 
 namespace Faluf.Portfolio.Blazor.Middlewares;
 
@@ -9,31 +8,37 @@ public sealed class CookieAuthMiddleware(RequestDelegate next, IDataProtectionPr
 
     public Task InvokeAsync(HttpContext context)
     {
-        if (context.Request.Path.StartsWithSegments($"/{Globals.ProcessLogin}") && context.Request.Query.TryGetValue(Globals.RefreshToken, out StringValues refreshToken))
+        if (CookieLoginHelper.CookieLoginQueue.TryDequeue(out (TokenDTO TokenDTO, bool IsPersisted) loginQueue))
         {
-            if (AuthService.CookieLoginQueue.TryDequeue(out (TokenDTO TokenDTO, bool IsPersisted) loginQueue))
+            CookieOptions cookieOptions = new()
             {
-                if (loginQueue.TokenDTO.RefreshToken == refreshToken)
-                {
-                    CookieOptions cookieOptions = new()
-                    {
-                        HttpOnly = true,
-                        Secure = true,
-                        SameSite = SameSiteMode.Lax,
-                        Expires = loginQueue.IsPersisted ? DateTimeOffset.UtcNow.AddYears(1) : null
-                    };
+				IsEssential = true,
+                HttpOnly = true,
+				Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = loginQueue.IsPersisted ? DateTimeOffset.UtcNow.AddYears(1) : null
+            };
 
-                    context.Response.Cookies.Append(Globals.AccessToken, dataProtector.Protect(loginQueue.TokenDTO.AccessToken), cookieOptions);
-                    context.Response.Cookies.Append(Globals.IsPersistent, dataProtector.Protect(loginQueue.IsPersisted.ToString()), cookieOptions);
-
-                    string? returnUrl = context.Request.Query[Globals.ReturnUrl];
-
-                    context.Response.Redirect(!string.IsNullOrWhiteSpace(returnUrl) ? returnUrl : "/");
-
-                    return Task.CompletedTask;
-                }
-            }
+            context.Response.Cookies.Append(Globals.AccessToken, dataProtector.Protect(loginQueue.TokenDTO.AccessToken), cookieOptions);
+            context.Response.Cookies.Append(Globals.IsPersistent, dataProtector.Protect(loginQueue.IsPersisted.ToString()), cookieOptions);
         }
+
+		if (CookieLoginHelper.CookieRefreshTokensQueue.TryDequeue(out TokenDTO? refreshTokenQueue))
+		{
+			bool isPersisted = context.Request.Cookies[Globals.IsPersistent] is { } isPersistedString && Convert.ToBoolean(dataProtector.Unprotect(isPersistedString));
+
+			CookieOptions cookieOptions = new()
+			{
+				IsEssential = true,
+				HttpOnly = true,
+				Secure = true,
+				SameSite = SameSiteMode.Lax,
+				Expires = isPersisted ? DateTimeOffset.UtcNow.AddYears(1) : null
+			};
+
+			context.Response.Cookies.Append(Globals.RefreshToken, dataProtector.Protect(refreshTokenQueue.AccessToken), cookieOptions);
+            context.Response.Cookies.Append(Globals.IsPersistent, dataProtector.Protect(isPersisted.ToString()), cookieOptions);
+		}
 
         return next(context);
     }

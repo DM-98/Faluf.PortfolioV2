@@ -1,4 +1,6 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@inject JWTAuthenticationStateProvider AuthenticationStateProvider
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Faluf Portfolio</a>
     </div>
@@ -25,14 +27,10 @@
                 </div>
 
                 <div>
-                    <form action="api/Auth/Logout" method="post" @formname="LogoutForm">
-                        <AntiforgeryToken />
-
-                        <button type="submit" class="btn btn-outline-danger w-100 text-start mb-3">
-                            <i style="margin-right: 0.25rem;" class="fa-solid fa-right-from-bracket"></i>
-                            @Localizer["Logout"]
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-outline-danger w-100 text-start mb-3" @onclick="@Logout">
+                        <i style="margin-right: 0.25rem;" class="fa-solid fa-right-from-bracket"></i>
+                        @Localizer["Logout"]
+                    </button>
                 </div>
             </Authorized>
 
@@ -52,3 +50,10 @@
         </AuthorizeView>
     </div>
 </div>
+
+@code {
+    private void Logout()
+    {
+        AuthenticationStateProvider.NotifyAuthenticationState(null);
+    }
+}

@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace Faluf.Portfolio.Blazor.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public sealed class AuthController(IDataProtectionProvider dataProtectionProvider, IAuthService authService) : ControllerBase
+public sealed class AuthController(CookieContainer cookieContainer, IAuthService authService, IDataProtectionProvider dataProtectionProvider) : ControllerBase
 {
 	private readonly IDataProtector dataProtector = dataProtectionProvider.CreateProtector(Globals.AuthProtector);
 
@@ -16,17 +17,22 @@ public sealed class AuthController(IDataProtectionProvider dataProtectionProvide
 
 		if (result.IsSuccess)
 		{
-			CookieOptions cookieOptions = new()
-			{
-				HttpOnly = true,
-				Secure = true,
-				SameSite = SameSiteMode.Lax,
-				Expires = loginInputModel.IsPersistent ? DateTime.UtcNow.AddYears(1) : null,
-				IsEssential = true
-			};
+			SetCookies(loginInputModel.IsPersistent, result.Content);
+		}
 
-			Response.Cookies.Append(Globals.AccessToken, dataProtector.Protect(result.Content.AccessToken), cookieOptions);
-			Response.Cookies.Append(Globals.IsPersistent, dataProtector.Protect(loginInputModel.IsPersistent.ToString()), cookieOptions);
+		return StatusCode((int)result.StatusCode, result);
+    }
+
+    [HttpPost("RefreshTokens")]
+	public async Task<ActionResult<Result<TokenDTO>>> RefreshTokensAsync(TokenDTO tokenDTO, CancellationToken cancellationToken = default)
+    {
+        Result<TokenDTO> result = await authService.RefreshTokensAsync(tokenDTO, cancellationToken);
+
+		if (result.IsSuccess)
+		{
+			bool isPersistent = Request.Cookies[Globals.IsPersistent] is { } isPersistentString && Convert.ToBoolean(dataProtector.Unprotect(isPersistentString));
+
+			SetCookies(isPersistent, result.Content);
 		}
 
 		return StatusCode((int)result.StatusCode, result);
@@ -38,6 +44,24 @@ public sealed class AuthController(IDataProtectionProvider dataProtectionProvide
         Response.Cookies.Delete(Globals.AccessToken);
         Response.Cookies.Delete(Globals.IsPersistent);
 
-        return LocalRedirect("/");
+        return Ok();
     }
+
+	private void SetCookies(bool isPersistent, TokenDTO tokenDTO)
+	{
+		CookieOptions cookieOptions = new()
+		{
+			IsEssential = true,
+			HttpOnly = true,
+			Secure = true,
+			SameSite = SameSiteMode.Lax,
+			Expires = isPersistent ? DateTimeOffset.UtcNow.AddYears(1) : null
+		};
+
+		Response.Cookies.Append(Globals.AccessToken, dataProtector.Protect(tokenDTO.AccessToken), cookieOptions);
+		Response.Cookies.Append(Globals.IsPersistent, dataProtector.Protect(isPersistent.ToString()), cookieOptions);
+
+		cookieContainer.Add(new Uri($"{Request.Scheme}://{Request.Host}"), new Cookie(Globals.AccessToken, dataProtector.Protect(tokenDTO.AccessToken)));
+		cookieContainer.Add(new Uri($"{Request.Scheme}://{Request.Host}"), new Cookie(Globals.IsPersistent, dataProtector.Protect(isPersistent.ToString())));
+	}
 }
