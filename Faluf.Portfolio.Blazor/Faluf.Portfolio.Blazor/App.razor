@@ -1,9 +1,5 @@
-﻿@using Microsoft.AspNetCore.DataProtection
-@using Microsoft.AspNetCore.Localization
+﻿@using Microsoft.AspNetCore.Localization
 @using System.Globalization
-
-@inject ITokenProvider TokenProvider
-@inject IDataProtectionProvider DataProtectionProvider
 
 <!DOCTYPE html>
 <html lang="en">
@@ -38,8 +34,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
         window.blazorCulture = {
-        get: () => window.localStorage['BlazorCulture'],
-        set: (value) => window.localStorage['BlazorCulture'] = value
+            get: () => window.localStorage['BlazorCulture'],
+            set: (value) => window.localStorage['BlazorCulture'] = value
         };
     </script>
 </body>
@@ -55,18 +51,5 @@
     protected override void OnInitialized() 
     {
         HttpContext.Response.Cookies.Append(CookieRequestCultureProvider.DefaultCookieName, CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture)));
-
-        string? accessToken = HttpContext.Request.Cookies[Globals.AccessToken];
-
-        if (accessToken is null)
-        {
-            return;
-        }
-
-        accessToken = DataProtectionProvider.CreateProtector(Globals.AuthProtector).Unprotect(accessToken);
-
-        IEnumerable<Claim> claims = new JwtSecurityTokenHandler().ReadJwtToken(accessToken).Claims;
-
-        TokenProvider.TokenDTO = new TokenDTO(accessToken, claims.First(x => x.Type is JwtRegisteredClaimNames.Jti).Value);
     }
 }

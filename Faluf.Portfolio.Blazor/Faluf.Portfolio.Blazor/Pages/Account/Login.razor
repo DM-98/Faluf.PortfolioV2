@@ -1,11 +1,8 @@
 ﻿@page "/account/login"
-@using System.Text.Json
-@using System.Text
 
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
-@inject JWTAuthenticationStateProvider AuthenticationStateProvider
-@inject IHttpClientFactory HttpClientFactory
+@inject TokenService TokenService
 
 <PageTitle>@Localizer["Login"]</PageTitle>
 
@@ -61,8 +58,7 @@
 
     private async Task LoginAsync()
     {
-        HttpResponseMessage httpResponseMessage = await HttpClientFactory.CreateClient(Globals.APIClient).PostAsync("Auth/Login", new StringContent(JsonSerializer.Serialize(LoginInputModel), Encoding.UTF8, Globals.ApplicationJson), CancellationToken);
-        Result<TokenDTO> loginResult = await httpResponseMessage.Content.ReadFromJsonAsync<Result<TokenDTO>>(CancellationToken) ?? new();
+        Result<TokenDTO> loginResult = await AuthService.LoginAsync(LoginInputModel, CancellationToken);
 
         if (!loginResult.IsSuccess)
         {
@@ -71,10 +67,8 @@
             return;
         }
 
-        CookieLoginHelper.CookieLoginQueue.Enqueue((loginResult.Content, LoginInputModel.IsPersistent));
+		TokenService.CurrentTokens = loginResult.Content;
 
-        AuthenticationStateProvider.NotifyAuthenticationState(loginResult.Content);
-
-        NavigationManager.NavigateTo(!string.IsNullOrWhiteSpace(ReturnUrl) ? ReturnUrl : "/");
+		NavigationManager.NavigateTo(ReturnUrl ?? "/");
     }
 }

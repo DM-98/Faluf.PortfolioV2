@@ -36,7 +36,9 @@ public class Result<T>
 
     public HttpStatusCode StatusCode { get; set; }
 
-    public static Result<TValue> Ok<TValue>(TValue content, int recordCount = 0) where TValue : T => new(true, content: content, recordCount: recordCount, statusCode: HttpStatusCode.OK);
+    public static implicit operator Result<T>(T value) => Ok(value);
+
+	public static Result<TValue> Ok<TValue>(TValue content, int recordCount = 0) where TValue : T => new(true, content: content, recordCount: recordCount, statusCode: HttpStatusCode.OK);
 
     public static Result<TValue> Created<TValue>(TValue content, int recordCount = 0) where TValue : T => new(true, content: content, recordCount: recordCount, statusCode: HttpStatusCode.Created);
 

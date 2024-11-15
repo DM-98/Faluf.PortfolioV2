@@ -1,16 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Localization;
 
 namespace Faluf.Portfolio.Blazor.Abstractions;
 
 public abstract class ExtendedComponentBase : ComponentBase
 {
-    [Inject]
-    public ILogger<ExtendedComponentBase> Logger { get; set; } = default!;
-
-    [Inject]
-    public IStringLocalizer<ExtendedComponentBase> Localizer { get; set; } = default!;
-
     public virtual bool IsLoading { get; set; }
     public virtual string? ErrorMessage { get; set; }
 
@@ -49,12 +42,7 @@ public abstract class ExtendedComponentBase : ComponentBase
         }
         else
         {
-            ErrorMessage = $"{result.ErrorMessage} | Error code: {(int)result.StatusCode}";
-
-            if (!string.IsNullOrWhiteSpace(result.ExceptionMessage) && !result.ExceptionMessage.Contains("cancel"))
-            {
-                Logger.LogError("Exception: {ExceptionMessage} | InnerException: {InnerException} | StackTrace: {StackTrace}", result.ExceptionMessage, result.InnerExceptionMessage, result.StackTrace);
-            }
+            ErrorMessage = $"{result.ErrorMessage} ({(int)result.StatusCode})";
         }
     }
 }

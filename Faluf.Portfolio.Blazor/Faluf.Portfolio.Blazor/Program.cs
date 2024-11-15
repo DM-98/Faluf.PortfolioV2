@@ -1,11 +1,9 @@
-using Faluf.Portfolio.Blazor.Middlewares;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
-using Serilog;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorComponents().AddInteractiveServerComponents().AddAuthenticationStateSerialization(options => options.SerializeAllClaims = true);
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddControllers();
 builder.Services.AddDataProtection().PersistKeysToDbContext<PortfolioDbContext>();
 
@@ -36,7 +34,6 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
 
@@ -44,12 +41,7 @@ app.UseHttpsRedirection();
 app.UseStatusCodePagesWithReExecute("/StatusCode/{0}");
 
 app.UseAntiforgery();
-app.UseSerilogIngestion();
-
-string[] supportedCultures = ["en-US", "da-DK"];
-app.UseRequestLocalization(new RequestLocalizationOptions().SetDefaultCulture(supportedCultures[0]).AddSupportedCultures(supportedCultures).AddSupportedUICultures(supportedCultures));
-
-app.UseCookieAuthMiddleware();
+app.UseRequestLocalization(new RequestLocalizationOptions().SetDefaultCulture("en-US").AddSupportedCultures(["en-US", "da-DK"]).AddSupportedUICultures(["en-US", "da-DK"]));
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode().AllowAnonymous();

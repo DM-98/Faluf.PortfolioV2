@@ -25,4 +25,11 @@ public sealed class UserRepository(IDbContextFactory<PortfolioDbContext> dbConte
 
 		return await context.Users.AnyAsync(x => x.Username == username, cancellationToken).ConfigureAwait(false);
 	}
+
+	public async Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+	{
+		await using PortfolioDbContext context = await DbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+
+		return await context.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken).ConfigureAwait(false);
+	}
 }

@@ -7,4 +7,6 @@ public interface IUserRepository : IBaseRepository<User>
     Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default);
 
     Task<bool> UsernameExistsAsync(string username, CancellationToken cancellationToken = default);
+	
+    Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default);
 }
