@@ -86,11 +86,11 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
 		}
 	}
 
-	public async Task<Result<TokenDTO>> RefreshTokensAsync(string refreshToken, CancellationToken cancellationToken = default)
+	public async Task<Result<TokenDTO>> RefreshTokensAsync(RefreshTokenInputModel refreshTokenInputModel, CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			AuthState? authState = await authStateRepository.GetByRefreshTokenAsync(refreshToken, cancellationToken).ConfigureAwait(false);
+			AuthState? authState = await authStateRepository.GetByRefreshTokenAsync(refreshTokenInputModel.RefreshToken, cancellationToken).ConfigureAwait(false);
 
 			if (authState is null or { RefreshToken: null } || authState.RefreshTokenExpiresAt < DateTimeOffset.UtcNow)
 			{

@@ -1,6 +1,5 @@
 ﻿global using Faluf.Portfolio.Blazor;
 global using Faluf.Portfolio.Blazor.Helpers;
-global using Faluf.Portfolio.Blazor.Services;
 global using Faluf.Portfolio.Core.Constants;
 global using Faluf.Portfolio.Core.DTOs.Inputs;
 global using Faluf.Portfolio.Core.DTOs.Outputs;

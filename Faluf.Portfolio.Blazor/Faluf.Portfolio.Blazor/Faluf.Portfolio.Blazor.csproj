@@ -22,4 +22,8 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\Faluf.Portfolio.Infrastructure\Faluf.Portfolio.Infrastructure.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Services\" />
+	</ItemGroup>
 </Project>

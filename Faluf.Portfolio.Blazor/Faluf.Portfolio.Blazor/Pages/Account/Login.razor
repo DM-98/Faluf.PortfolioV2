@@ -1,33 +1,26 @@
 ﻿@page "/account/login"
 
-@inject NavigationManager NavigationManager
 @inject IAuthService AuthService
-@inject TokenService TokenService
 
 <PageTitle>@Localizer["Login"]</PageTitle>
 
 <h3>@Localizer["Login"]</h3>
 
-<EditForm Model="@LoginInputModel" OnValidSubmit="LoginAsync" FormName="LoginForm">
-    <FluentValidationValidator />
-
-    <!-- Email -->
+<form id="LoginForm">
     <div class="mb-3">
         <label for="email" class="form-label">@Localizer["Email"]:</label>
-        <InputText id="email" @bind-Value="@LoginInputModel.Email" class="form-control" />
-        <ValidationMessage For="@(() => LoginInputModel.Email)" class="text-danger" />
+        <input id="email" class="form-control" type="email" value="test@test.com" />
     </div>
 
     <!-- Password -->
     <div class="mb-3">
         <label for="password" class="form-label">@Localizer["Password"]:</label>
-        <InputText id="password" type="password" @bind-Value="@LoginInputModel.Password" class="form-control" />
-        <ValidationMessage For="@(() => LoginInputModel.Password)" class="text-danger" />
+        <input id="password" class="form-control" type="password" value="Test123!" />
     </div>
 
     <!-- Stay logged in -->
     <div class="form-check mb-3">
-        <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="@LoginInputModel.IsPersistent" />
+        <input id="rememberMe" class="form-check-input" type="checkbox" value="checked" />
         <label class="form-check-label" for="rememberMe">@Localizer["StayLoggedIn"]</label>
     </div>
 
@@ -36,39 +29,47 @@
         <button type="submit" class="btn btn-primary btn-block">@Localizer["Login"]</button>
     </div>
 
-    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
-    {
-        <div class="alert alert-danger mt-3" role="alert">
-            @((MarkupString)ErrorMessage)
-        </div>
-    }
-</EditForm>
+    <div id="message" class="mt-3"></div>
+</form>
 
-@code {
-    [Parameter, SupplyParameterFromQuery]
-    public string? ReturnUrl { get; set; }
+<script>
+    document.getElementById('LoginForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
 
-    [SupplyParameterFromForm(FormName = "LoginForm")]
-    private LoginInputModel LoginInputModel { get; set; } = new()
-    {
-        Email = "test@test.com",
-        Password = "Test123!",
-        ClientType = ClientType.Web
-    };
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const isPersistent = document.getElementById('rememberMe').checked;
+		const clientType = 1;
 
-    private async Task LoginAsync()
-    {
-        Result<TokenDTO> loginResult = await AuthService.LoginAsync(LoginInputModel, CancellationToken);
+        try {
+            const response = await fetch('/api/Auth/Login', { // Replace with your actual API endpoint
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password, isPersistent, clientType }),
+            });
 
-        if (!loginResult.IsSuccess)
-        {
-            SetErrorMessage(loginResult);
-
-            return;
+            if (response.ok) {
+                document.getElementById('message').innerHTML = `
+                    <div class="alert alert-success">
+                        Login successful. Redirecting...
+                    </div>`;
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1250);
+            } else {
+                const error = await response.json();
+                document.getElementById('message').innerHTML = `
+                    <div class="alert alert-danger">
+                        ${error.errorMessage}
+                    </div>`;
+            }
+        } catch (err) {
+            document.getElementById('message').innerHTML = `
+                <div class="alert alert-danger">
+                    ${err.errorMessage}
+                </div>`;
         }
-
-		TokenService.CurrentTokens = loginResult.Content;
-
-		NavigationManager.NavigateTo(ReturnUrl ?? "/");
-    }
-}
+    });
+</script>

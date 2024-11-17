@@ -1,25 +1,41 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Faluf.Portfolio.Blazor.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public sealed class AuthController(IAuthService authService) : ControllerBase
+public sealed class AuthController(IAuthService authService, IDataProtectionProvider dataProtectionProvider) : ControllerBase
 {
 	[HttpPost("Login")]
     public async Task<ActionResult<Result<TokenDTO>>> LoginAsync(LoginInputModel loginInputModel, CancellationToken cancellationToken = default)
     {
         Result<TokenDTO> result = await authService.LoginAsync(loginInputModel, cancellationToken);
 
+        if (result.IsSuccess)
+        {
+			CookieOptions cookieOptions = new()
+			{
+				IsEssential = true,
+				HttpOnly = true,
+				Secure = true,
+				SameSite = SameSiteMode.Strict,
+				Expires = loginInputModel.IsPersistent ? DateTimeOffset.UtcNow.AddYears(1) : default
+			};
+
+			IDataProtector dataProtector = dataProtectionProvider.CreateProtector(Globals.AuthProtector);
+
+			Response.Cookies.Append(Globals.AccessToken, dataProtector.Protect(result.Content.AccessToken), cookieOptions);
+			Response.Cookies.Append(Globals.IsPersistent, dataProtector.Protect(loginInputModel.IsPersistent.ToString()), cookieOptions);
+		}
+
 		return StatusCode((int)result.StatusCode, result);
     }
 
-	public record RefreshTokenRequest(string RefreshToken);
-
 	[HttpPost("RefreshTokens")]
-	public async Task<ActionResult<Result<TokenDTO>>> RefreshTokensAsync([FromBody] RefreshTokenRequest refreshTokenRequest, CancellationToken cancellationToken = default)
+	public async Task<ActionResult<Result<TokenDTO>>> RefreshTokensAsync(RefreshTokenInputModel refreshTokenInputModel, CancellationToken cancellationToken = default)
     {
-		Result<TokenDTO> result = await authService.RefreshTokensAsync(refreshTokenRequest.RefreshToken, cancellationToken);
+		Result<TokenDTO> result = await authService.RefreshTokensAsync(refreshTokenInputModel, cancellationToken);
 
 		return StatusCode((int)result.StatusCode, result);
     }

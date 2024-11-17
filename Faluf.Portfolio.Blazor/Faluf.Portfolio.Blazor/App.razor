@@ -9,7 +9,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <base href="/" />
-    <title>Faluf Portfolio</title>
 
     <!-- FontAwesome Free -->
     <link href="css/fontawesome/fontawesome.min.css" rel="stylesheet" />
@@ -46,7 +45,8 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    private IComponentRenderMode? PageRenderMode => HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+    private IComponentRenderMode? PageRenderMode => null;
+    // private IComponentRenderMode? PageRenderMode => HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
 
     protected override void OnInitialized() 
     {

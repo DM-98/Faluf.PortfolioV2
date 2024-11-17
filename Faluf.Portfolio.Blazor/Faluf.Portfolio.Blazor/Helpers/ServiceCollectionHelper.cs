@@ -1,19 +1,14 @@
-﻿using FluentValidation;
-using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Reflection;
+using System.Text;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Server.Circuits;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.MSSqlServer;
-using System.Net;
-using System.Reflection;
-using System.Text;
 
 namespace Faluf.Portfolio.Blazor.Helpers;
 
@@ -55,8 +50,6 @@ public static class ServiceCollectionHelper
 		services.AddCascadingAuthenticationState();
 		services.AddScoped<IAuthStateRepository, AuthStateRepository>();
 		services.AddScoped<IAuthService, AuthService>();
-		services.AddScoped<TokenService>();
-		services.AddScoped<AuthenticationStateProvider, JWTAuthenticationStateProvider>();
 
 		services.AddAuthentication(options =>
 		{
@@ -73,27 +66,59 @@ public static class ServiceCollectionHelper
 				ClockSkew = TimeSpan.Zero
 			};
 
-			//options.Events = new JwtBearerEvents
-			//{
-			//	OnMessageReceived = async context =>
-			//	{
-			//		try
-			//		{
-			//			ProtectedLocalStorage protectedLocalStorage = context.HttpContext.RequestServices.GetRequiredService<ProtectedLocalStorage>();
-			//			ProtectedSessionStorage protectedSessionStorage = context.HttpContext.RequestServices.GetRequiredService<ProtectedSessionStorage>();
+			options.Events = new JwtBearerEvents
+			{
+				OnMessageReceived = async context =>
+				{
+					ILogger<Program> logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
 
-			//			bool isPersistent = (await protectedLocalStorage.GetAsync<string>(Globals.IsPersistent)).Value is { } isPersistentString && Convert.ToBoolean(isPersistentString);
+					string? accessToken = context.Request.Cookies[Globals.AccessToken];
 
-			//			context.Token = isPersistent ? (await protectedLocalStorage.GetAsync<string>(Globals.AccessToken)).Value : (await protectedSessionStorage.GetAsync<string>(Globals.AccessToken)).Value;
+					if (string.IsNullOrWhiteSpace(accessToken))
+					{
+						return;
+					}
 
-			//			await Console.Out.WriteAsync($"OnMessageReceived: {context.Token}");
-			//		}
-			//		catch(Exception ex)
-			//		{
-			//			await Console.Out.WriteAsync($"OnMessageReceived exception: {ex.Message}");
-			//		}
-			//	}
-			//};
+					IDataProtector dataProtector = context.HttpContext.RequestServices.GetRequiredService<IDataProtectionProvider>().CreateProtector(Globals.AuthProtector);
+					accessToken = dataProtector.Unprotect(accessToken);
+					JwtSecurityToken jwtSecurityToken = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
+
+					if (jwtSecurityToken.ValidTo > DateTime.UtcNow)
+					{
+						context.Token = accessToken;
+
+						return;
+					}
+
+					string refreshToken = jwtSecurityToken.Claims.First(x => x.Type is JwtRegisteredClaimNames.Jti).Value;
+					IAuthService authService = context.HttpContext.RequestServices.GetRequiredService<IAuthService>();
+					Result<TokenDTO> refreshTokensResult = await authService.RefreshTokensAsync(new RefreshTokenInputModel { RefreshToken = refreshToken });
+
+					if (!refreshTokensResult.IsSuccess)
+					{
+						context.Response.Cookies.Delete(Globals.AccessToken);
+						context.Response.Cookies.Delete(Globals.IsPersistent);
+
+						return;
+					}
+
+					bool isPersistent = context.Request.Cookies[Globals.IsPersistent] is { } isPersistentString && Convert.ToBoolean(dataProtector.Unprotect(isPersistentString));
+
+					CookieOptions cookieOptions = new()
+					{
+						IsEssential = true,
+						HttpOnly = true,
+						Secure = true,
+						SameSite = SameSiteMode.Strict,
+						Expires = isPersistent ? DateTime.UtcNow.AddYears(1) : null
+					};
+
+					context.Response.Cookies.Append(Globals.AccessToken, dataProtector.Protect(refreshTokensResult.Content.AccessToken), cookieOptions);
+					context.Response.Cookies.Append(Globals.IsPersistent, dataProtector.Protect(isPersistent.ToString()), cookieOptions);
+
+					context.Token = refreshTokensResult.Content.AccessToken;
+				}
+			};
 		});
 	}
 
