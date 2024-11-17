@@ -1,12 +1,11 @@
 ﻿@page "/account/login"
 
-@inject IAuthService AuthService
-
 <PageTitle>@Localizer["Login"]</PageTitle>
 
 <h3>@Localizer["Login"]</h3>
 
 <form id="LoginForm">
+    <!-- Email -->
     <div class="mb-3">
         <label for="email" class="form-label">@Localizer["Email"]:</label>
         <input id="email" class="form-control" type="email" value="test@test.com" />
@@ -42,7 +41,7 @@
 		const clientType = 1;
 
         try {
-            const response = await fetch('/api/Auth/Login', { // Replace with your actual API endpoint
+            const response = await fetch('/api/Auth/Login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
