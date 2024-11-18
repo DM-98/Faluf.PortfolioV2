@@ -73,10 +73,7 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
 
 			user.Roles.ForEach(role => claims.Add(new Claim(ClaimTypes.Role, role)));
 
-			return new TokenDTO(
-				AccessToken: GenerateAccessToken(claims),
-				RefreshToken: authState.RefreshToken,
-				IsPersistent: loginInputModel.IsPersistent);
+			return new TokenDTO(GenerateAccessToken(claims), authState.RefreshToken);
 		}
 		catch (Exception ex)
 		{
@@ -86,15 +83,15 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
 		}
 	}
 
-	public async Task<Result<TokenDTO>> RefreshTokensAsync(string refreshToken, CancellationToken cancellationToken = default)
+	public async Task<Result<TokenDTO>> RefreshTokensAsync(RefreshTokenInputModel refreshTokenInputModel, CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			AuthState? authState = await authStateRepository.GetByRefreshTokenAsync(refreshToken, cancellationToken).ConfigureAwait(false);
+			AuthState? authState = await authStateRepository.GetByRefreshTokenAsync(refreshTokenInputModel.RefreshToken, cancellationToken).ConfigureAwait(false);
 
 			if (authState is null or { RefreshToken: null } || authState.RefreshTokenExpiresAt < DateTimeOffset.UtcNow)
 			{
-				return Result.Unauthorized<TokenDTO>(stringLocalizer["Unauthorized2"]);
+				return Result.Unauthorized<TokenDTO>(stringLocalizer["Unauthorized"]);
 			}
 
 			if (authState.LockoutEndAt > DateTimeOffset.UtcNow)
@@ -117,7 +114,7 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
 			{
 				await authStateRepository.DeleteByIdAsync(authState.Id, isSoftDelete: false, cancellationToken).ConfigureAwait(false);
 
-				return Result.Unauthorized<TokenDTO>(stringLocalizer["Unauthorized3"]);
+				return Result.Unauthorized<TokenDTO>(stringLocalizer["Unauthorized"]);
 			}
 
 			List<Claim> claims =
@@ -130,13 +127,43 @@ public sealed class AuthService(ILogger<AuthService> logger, IAuthStateRepositor
 
 			user.Roles.ForEach(role => claims.Add(new Claim(ClaimTypes.Role, role)));
 
-			return Result.Ok(new TokenDTO(GenerateAccessToken(claims), authState.RefreshToken));
+			return new TokenDTO(GenerateAccessToken(claims), authState.RefreshToken);
 		}
 		catch (Exception ex)
 		{
 			logger.LogException(ex);
 
 			return Result.InternalServerError<TokenDTO>(stringLocalizer["InternalServerError"], ex);
+		}
+	}
+
+	public async Task<Result> ValidateRefreshTokenAsync(RefreshTokenInputModel refreshTokenInputModel, CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			AuthState? authState = await authStateRepository.GetByRefreshTokenAsync(refreshTokenInputModel.RefreshToken, cancellationToken).ConfigureAwait(false);
+
+			if (authState is null or { RefreshToken: null } || authState.RefreshTokenExpiresAt < DateTimeOffset.UtcNow)
+			{
+				return Result.Unauthorized(stringLocalizer["Unauthorized"]);
+			}
+
+			if (authState.LockoutEndAt > DateTimeOffset.UtcNow)
+			{
+				TimeSpan lockoutEnd = (authState.LockoutEndAt - DateTimeOffset.UtcNow).Value;
+				double lockoutEndMinutes = Math.Ceiling(lockoutEnd.TotalMinutes);
+				double lockoutEndSeconds = Math.Ceiling(lockoutEnd.TotalSeconds);
+
+				return Result.Locked(stringLocalizer["AccountLocked", lockoutEndMinutes, lockoutEndSeconds]);
+			}
+
+			return Result.Ok();
+		}
+		catch (Exception ex)
+		{
+			logger.LogException(ex);
+
+			return Result.InternalServerError(stringLocalizer["InternalServerError"], ex);
 		}
 	}
 

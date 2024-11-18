@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Faluf.Portfolio.Blazor.Controllers;
 
@@ -14,22 +16,28 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
 		return StatusCode((int)result.StatusCode, result);
     }
 
-	public record RefreshTokenRequest(string RefreshToken);
-
 	[HttpPost("RefreshTokens")]
-	public async Task<ActionResult<Result<TokenDTO>>> RefreshTokensAsync([FromBody] RefreshTokenRequest refreshTokenRequest, CancellationToken cancellationToken = default)
+	public async Task<ActionResult<Result<TokenDTO>>> RefreshTokensAsync([FromBody] RefreshTokenInputModel refreshTokenInputModel, CancellationToken cancellationToken = default)
     {
-		Result<TokenDTO> result = await authService.RefreshTokensAsync(refreshTokenRequest.RefreshToken, cancellationToken);
+		Result<TokenDTO> result = await authService.RefreshTokensAsync(refreshTokenInputModel, cancellationToken);
 
 		return StatusCode((int)result.StatusCode, result);
     }
 
     [HttpPost("Logout")]
-    public IActionResult Logout()
+    public async Task<IActionResult> LogoutAsync()
     {
-        Response.Cookies.Delete(Globals.AccessToken);
-        Response.Cookies.Delete(Globals.IsPersistent);
+		await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        return LocalRedirect("/");
-    }
+		string refererUrl = Request.Headers.Referer.ToString();
+
+		if (Uri.TryCreate(refererUrl, UriKind.Absolute, out var uri))
+		{
+			string localPath = uri.PathAndQuery;
+
+			return LocalRedirect($"~{localPath}");
+		}
+
+		return LocalRedirect("~/");
+	}
 }

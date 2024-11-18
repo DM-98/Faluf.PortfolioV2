@@ -1,4 +1,5 @@
-﻿@inject TokenService TokenService
+﻿@inject NavigationManager NavigationManager
+@inject IHttpClientFactory HttpClientFactory
 
 <div class="top-row ps-3 navbar navbar-dark">
 	<div class="container-fluid">
@@ -27,10 +28,14 @@
 				</div>
 
 				<div>
-					<button type="button" class="btn btn-outline-danger w-100 text-start mb-3" @onclick="() => TokenService.CurrentTokens = null">
-						<i style="margin-right: 0.25rem;" class="fa-solid fa-right-from-bracket"></i>
-						@Localizer["Logout"]
-					</button>
+					<form action="api/Auth/Logout" method="post">
+						<AntiforgeryToken />
+
+						<button type="submit" class="btn btn-outline-danger w-100 text-start mb-3">
+							<i style="margin-right: 0.25rem;" class="fa-solid fa-right-from-bracket"></i>
+							@Localizer["Logout"]
+						</button>
+					</form>
 				</div>
 			</Authorized>
 

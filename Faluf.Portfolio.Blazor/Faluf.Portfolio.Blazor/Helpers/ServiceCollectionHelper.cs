@@ -1,19 +1,16 @@
-﻿using FluentValidation;
+﻿using System.Reflection;
+using System.Text;
+using FluentValidation;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Server.Circuits;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.MSSqlServer;
-using System.Net;
-using System.Reflection;
-using System.Text;
 
 namespace Faluf.Portfolio.Blazor.Helpers;
 
@@ -33,6 +30,9 @@ public static class ServiceCollectionHelper
 				sinkOptions: new MSSqlServerSinkOptions { TableName = "Logs", AutoCreateSqlTable = true },
 				restrictedToMinimumLevel: LogEventLevel.Warning);
 		});
+
+		// IHttpClientFactory
+		builder.Services.AddHttpClient("API", client => client.BaseAddress = new Uri(builder.Configuration["API:BaseUrl"]!));
 
 		// Localization
 		builder.Services.AddLocalization();
@@ -55,13 +55,48 @@ public static class ServiceCollectionHelper
 		services.AddCascadingAuthenticationState();
 		services.AddScoped<IAuthStateRepository, AuthStateRepository>();
 		services.AddScoped<IAuthService, AuthService>();
-		services.AddScoped<TokenService>();
-		services.AddScoped<AuthenticationStateProvider, JWTAuthenticationStateProvider>();
-
+		services.AddScoped<AuthenticationStateProvider, JWTRevalidatingAuthenticationStateProvider>();
 		services.AddAuthentication(options =>
 		{
-			options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+			options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 			options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+		}).AddCookie(options =>
+		{
+			options.Cookie.Name = Globals.AccessToken;
+			options.Cookie.SameSite = SameSiteMode.Strict;
+			options.Cookie.HttpOnly = true;
+			options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+			options.Cookie.IsEssential = true;
+			options.Events = new CookieAuthenticationEvents
+			{
+				OnValidatePrincipal = async context =>
+				{
+					if (context.Principal is null or { Identity.IsAuthenticated: false })
+					{
+						context.RejectPrincipal();
+
+						await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+						return;
+					}
+
+					using IServiceScope scope = context.HttpContext.RequestServices.CreateScope();
+
+					IAuthService authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+					ILogger<JWTRevalidatingAuthenticationStateProvider> logger = scope.ServiceProvider.GetRequiredService<ILogger<JWTRevalidatingAuthenticationStateProvider>>();
+
+					if (!await JWTRevalidatingAuthenticationStateProvider.ValidateAuthStateAsync(authService, context.Principal, logger, context.HttpContext.RequestAborted))
+					{
+						context.RejectPrincipal();
+
+						await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+					}
+				}
+			};
+			options.SlidingExpiration = true;
+			options.LoginPath = "/login";
+			options.LogoutPath = "/logout";
+			options.AccessDeniedPath = "/access-denied";
 		}).AddJwtBearer(options =>
 		{
 			options.TokenValidationParameters = new TokenValidationParameters
@@ -72,28 +107,6 @@ public static class ServiceCollectionHelper
 				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"]!)),
 				ClockSkew = TimeSpan.Zero
 			};
-
-			//options.Events = new JwtBearerEvents
-			//{
-			//	OnMessageReceived = async context =>
-			//	{
-			//		try
-			//		{
-			//			ProtectedLocalStorage protectedLocalStorage = context.HttpContext.RequestServices.GetRequiredService<ProtectedLocalStorage>();
-			//			ProtectedSessionStorage protectedSessionStorage = context.HttpContext.RequestServices.GetRequiredService<ProtectedSessionStorage>();
-
-			//			bool isPersistent = (await protectedLocalStorage.GetAsync<string>(Globals.IsPersistent)).Value is { } isPersistentString && Convert.ToBoolean(isPersistentString);
-
-			//			context.Token = isPersistent ? (await protectedLocalStorage.GetAsync<string>(Globals.AccessToken)).Value : (await protectedSessionStorage.GetAsync<string>(Globals.AccessToken)).Value;
-
-			//			await Console.Out.WriteAsync($"OnMessageReceived: {context.Token}");
-			//		}
-			//		catch(Exception ex)
-			//		{
-			//			await Console.Out.WriteAsync($"OnMessageReceived exception: {ex.Message}");
-			//		}
-			//	}
-			//};
 		});
 	}
 

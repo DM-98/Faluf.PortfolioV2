@@ -1,3 +1,3 @@
 ﻿namespace Faluf.Portfolio.Core.DTOs.Outputs;
 
-public sealed record TokenDTO(string AccessToken, string RefreshToken, bool IsPersistent = false);
+public sealed record TokenDTO(string AccessToken, string RefreshToken);

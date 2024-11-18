@@ -59,4 +59,10 @@ public sealed class Result(bool isSuccess, string? errorMessage = null, Exceptio
     public static Result Ok() => new(true, statusCode: HttpStatusCode.OK);
 
     public static Result BadRequest(string errorMessage) => new(false, errorMessage: errorMessage, statusCode: HttpStatusCode.BadRequest);
+
+	public static Result Unauthorized(string errorMessage) => new(false, errorMessage: errorMessage, statusCode: HttpStatusCode.Unauthorized);
+
+	public static Result Locked(string errorMessage) => new(false, errorMessage: errorMessage, statusCode: HttpStatusCode.Locked);
+
+	public static Result InternalServerError(string errorMessage, Exception ex) => new(false, errorMessage: errorMessage, exception: ex, statusCode: HttpStatusCode.InternalServerError);
 }

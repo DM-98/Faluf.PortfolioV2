@@ -44,7 +44,7 @@ app.UseAntiforgery();
 app.UseRequestLocalization(new RequestLocalizationOptions().SetDefaultCulture("en-US").AddSupportedCultures(["en-US", "da-DK"]).AddSupportedUICultures(["en-US", "da-DK"]));
 
 app.MapStaticAssets();
-app.MapRazorComponents<App>().AddInteractiveServerRenderMode().AllowAnonymous();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.MapControllers();
 
 app.Run();

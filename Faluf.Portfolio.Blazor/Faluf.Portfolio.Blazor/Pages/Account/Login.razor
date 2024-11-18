@@ -1,8 +1,13 @@
 ﻿@page "/account/login"
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.DataProtection
+
+@attribute [ExcludeFromInteractiveRouting]
 
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
-@inject TokenService TokenService
+@inject IDataProtectionProvider DataProtectionProvider
 
 <PageTitle>@Localizer["Login"]</PageTitle>
 
@@ -45,6 +50,9 @@
 </EditForm>
 
 @code {
+    [CascadingParameter]
+    public HttpContext HttpContext { get; set; } = default!;
+
     [Parameter, SupplyParameterFromQuery]
     public string? ReturnUrl { get; set; }
 
@@ -67,8 +75,14 @@
             return;
         }
 
-		TokenService.CurrentTokens = loginResult.Content;
+		IEnumerable<Claim> claims = new JwtSecurityTokenHandler().ReadJwtToken(loginResult.Content.AccessToken).Claims;
+        ClaimsPrincipal claimsPrincipal = new(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+		AuthenticationProperties authenticationProperties = new() { IsPersistent = LoginInputModel.IsPersistent };
 
-		NavigationManager.NavigateTo(ReturnUrl ?? "/");
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, authenticationProperties);
+
+		HttpContext.User = claimsPrincipal;
+
+        NavigationManager.NavigateTo(!string.IsNullOrWhiteSpace(ReturnUrl) ? ReturnUrl : "/");
     }
 }
